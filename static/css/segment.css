@@ -1,0 +1,125 @@
+:root {
+    --edit-area-height: calc(100dvh - 12rem);
+}
+
+main {
+    height: 100dvh;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: 6rem var(--edit-area-height) 6rem;
+
+    &>#edit-header {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+
+        &>button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            padding: 0;
+            appearance: none;
+
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            border-radius: 0.5rem;
+            background-color: #ffffff;
+        }
+
+        &>button.edit-return {}
+
+        &>button.edit-save {}
+
+    }
+
+    &>#edit-area {
+        padding: 20px 10px;
+
+        &>div {
+            display: flex;
+            justify-content: center;
+
+            &>#canvas-container {
+                &>#source-canvas {
+                    max-height: var(--edit-area-height);
+                }
+            }
+        }
+    }
+
+    &>#edit-footer {
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        flex-direction: row-reverse;
+        padding: 10px;
+
+        &>button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            padding: 0;
+            appearance: none;
+
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            border-radius: 0.5rem;
+            background-color: #ffffff;
+        }
+
+        &>button.edit-next {}
+    }
+
+    &>#edit-popover {
+        max-width: 80vw;
+        max-height: 100dvh;
+        border: 3px solid #343434;
+        border-radius: 2rem;
+        background-color: #202020;
+        padding: 1rem;
+        color: #ffffff;
+
+
+        &>div {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 10px;
+            margin-bottom: 10px;
+
+            &>img {
+                max-width: 100%;
+                max-height: calc(var(--edit-area-height) - 6rem);
+                border-radius: 0.5rem;
+                background-color: #00FF00;
+            }
+
+            &>button {
+                background-color: transparent;
+                border: none;
+                cursor: pointer;
+                outline: none;
+                padding: 0;
+                appearance: none;
+
+                padding: 0.5rem 1rem;
+                font-size: 1rem;
+                border-radius: 0.5rem;
+                max-height: 5rem;
+                background-color: #ffffff;
+                max-height: 5rem;
+            }
+
+            &>#save-button {}
+        }
+    }
+
+    &>#edit-popover::backdrop {
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+}

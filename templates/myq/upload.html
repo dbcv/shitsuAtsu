@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>画像アップロード</h2>
+<p>画像ファイルを選択すると、自動でセグメンテーションページに移動します。</p>
+
+<form id="upload-form" style="margin-bottom: 20px;">
+  {% csrf_token %}
+  <input type="file" id="file-input" name="image" accept="image/*" capture="environment">
+</form>
+
+<div id="loading-spinner" style="display: none;">
+  <p>アップロードして処理中です...</p>
+</div>
+
+
+<script>
+const fileInput = document.getElementById('file-input');
+const uploadForm = document.getElementById('upload-form');
+const loadingSpinner = document.getElementById('loading-spinner'); // スピナーを取得
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+fileInput.addEventListener('change', () => {
+  const file = fileInput.files[0];
+  if (!file) {
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('image', file);
+
+  loadingSpinner.style.display = 'block';
+
+  fetch("{% url 'upload' %}", {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrfToken,
+    },
+    body: formData,
+  })
+  .then(response => response.json())
+  .then(data => {
+   
+    if (data.success && data.segment_url) {
+      window.location.href = data.segment_url;
+    } else {
+      alert(`エラーが発生しました: ${data.error}`);
+      loadingSpinner.style.display = 'none';
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert('アップロード中に通信エラーが発生しました。');
+    loadingSpinner.style.display = 'none';
+  });
+
+  uploadForm.reset();
+});
+</script>
+{% endblock %}

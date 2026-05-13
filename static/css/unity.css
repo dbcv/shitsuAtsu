@@ -1,0 +1,120 @@
+:root {
+    --edit-area-height: calc(100dvh - 12rem);
+}
+
+body {
+    margin: 0;
+    font-family: sans-serif;
+    text-align: center;
+}
+
+#unity-container {
+    width: 100%;
+    /*height: 80vh;*/
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #333;
+}
+
+#unity-canvas {
+    width: min(calc(1.6 * 80vh), 100vw);
+    height: min(calc(0.625 * 100vw), 80vh);
+}
+
+.controls {
+    margin-top: 20px;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+}
+
+.control-group {
+    display: grid;
+    grid-template-columns: 100px 1fr 50px;
+    gap: 10px;
+    align-items: center;
+}
+
+.control-group label {
+    text-align: right;
+}
+
+.control-group input[type="color"] {
+    width: 40px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid #ccc;
+}
+
+#url-input-group {
+    margin-top: 20px;
+}
+
+#unity-footer {
+    bottom: 0;
+    /* left: 0; */
+    position: fixed;
+    right: 0;
+    /* width: 100%; */
+    display: flex;
+    justify-content: flex-end;
+    padding-bottom: 20px;
+
+    &>button {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        outline: none;
+        padding: 0;
+        appearance: none;
+
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        border-radius: 0.5rem;
+        background-color: #ffffff;
+        margin-right: 20px;
+    }
+}
+
+#check {
+    max-width: 80vw;
+    max-height: 100dvh;
+    border: 3px solid #343434;
+    border-radius: 2rem;
+    background-color: #202020;
+    padding: 1rem;
+
+    &>div {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: flex-end;
+        gap: 10px;
+
+        &>img {
+            max-width: 100%;
+            max-height: var(--edit-area-height);
+            border-radius: 0.5rem;
+            background-color: #00FF00;
+        }
+
+        &>button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            padding: 0;
+            appearance: none;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            border-radius: 0.5rem;
+            max-height: 5rem;
+            background-color: #ffffff;
+            max-height: 5rem;
+        }
+    }
+}

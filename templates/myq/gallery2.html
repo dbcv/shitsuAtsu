@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load svg %}
+{% load static %}
+{% load static_tags %}
+
+{% block unique_css %}
+<link rel="stylesheet" href="{% static_ts 'css/gallery.css' %}">
+{% endblock %}
+
+{% block content %}
+<h1>ギャラリー</h1>
+{% include "myq/gallery-header.html" %}
+<div id="originals" class="tab-pane">
+    <div class="gallery-grid">
+        {% for photo in original_photos %}
+        <div class="gallery-item" id="photo-{{ photo.uuid }}">
+            <a href="{% url 'photo_segment' uuid=photo.uuid %}">
+                <img src="{{ photo.get_image_url_256 }}" alt="{{ photo.title }}" loading="lazy">
+            </a>
+            <button class="delete-button" data-uuid="{{ photo.uuid }}" data-type="original">&times;</button>
+        </div>
+        {% empty %}
+        <p>アップロードされた画像はありません。</p>
+        {% endfor %}
+    </div>
+</div>
+{% include "myq/home-footer.html" %}
+{% endblock %}

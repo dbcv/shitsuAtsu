@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load svg %}
+{% load static %}
+{% load static_tags %}
+
+{% block unique_css %}
+<link rel="stylesheet" href="{% static_ts 'css/setting.css' %}">
+{% endblock %}
+
+
+{% block content %}
+<h1>設定画面</h1>
+
+{% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<h3>プロフィール情報</h3>
+<form method="post" id="profile">
+  {% csrf_token %}
+  {{ profile_form.as_table }}
+  <button type="submit" name="update_profile">更新</button>
+</form>
+
+<h3>パスワード変更</h3>
+<form method="post">
+  {% csrf_token %}
+  {{ password_form.as_p }}
+  <button type="submit" name="change_password">変更</button>
+</form>
+{% include "myq/home-footer.html" %}
+{% endblock %}

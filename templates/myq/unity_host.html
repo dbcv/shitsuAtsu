@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% load static %}
+{% load static_tags %}
+
+{% block unique_css %}
+<link rel="stylesheet" href="{% static_ts 'css/unity.css' %}">
+{% endblock %}
+
+{% block content %}
+
+
+<div id="unity-container">
+    <canvas id="unity-canvas"></canvas>
+</div>
+
+<div class="controls">
+    <div class="control-group">
+        <label for="albedo-tint-picker">色味調整:</label>
+        <input type="color" id="albedo-tint-picker" value="#FFFFFF">
+    </div>
+    <div class="control-group">
+        <label for="specular-slider">鏡面反射:</label>
+        <input type="range" id="specular-slider" min="0" max="1" step="0.01" value="0.5">
+        <span id="specular-value">0.50</span>
+    </div>
+    <div class="control-group">
+        <label for="roughness-slider">ラフネス:</label>
+        <input type="range" id="roughness-slider" min="0" max="1" step="0.01" value="0.5">
+        <span id="roughness-value">0.50</span>
+    </div>
+    <div class="control-group">
+        <label for="brightness-slider">反射度合:</label>
+        <input type="range" id="brightness-slider" min="0" max="1" step="0.01" value="0.5">
+        <span id="brightness-value">0.50</span>
+    </div>
+</div>
+
+<div id="unity-footer">
+    <button id="capture-button" popovertarget="check" popovertargetaction="show" >次へ</button>
+</div>
+<input type="hidden" id="csrf-token-input" value="{{ csrf_token }}">
+
+<div id="url-input-group" style="display: none;">
+    <input type="text" id="url-input" placeholder="テクスチャURLを入力" size="50">
+    <button id="change-button">テクスチャ変更</button>
+</div>
+<img id="preview">
+
+<div id="check" popover>
+    <div>
+        <img id="capture">
+        <button id="save-button">確定して次へ</button>
+    </div>
+</div>
+
+<script src="{% static_ts 'unity_build/sample.loader.js' %}"></script>
+<script>
+    // Unityインスタンスをグローバルスコープで保持
+    let unityInstance = null;
+
+    createUnityInstance(document.querySelector("#unity-canvas"), {
+        dataUrl: "{% static_ts 'unity_build/sample.data' %}",
+        frameworkUrl: "{% static_ts 'unity_build/sample.framework.js' %}",
+        codeUrl: "{% static_ts 'unity_build/sample.wasm' %}",
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "MyUnityApp",
+        productVersion: "0.1",
+    }).then((instance) => {
+        unityInstance = instance;
+        initializeUI();
+    }).catch((message) => {
+        alert(message);
+    });
+
+    function initializeUI() {
+        let url = new URL(window.location.href);
+        let params = url.searchParams;
+        const imageURL = params.get('image');
+        if (imageURL) {
+            unityInstance.SendMessage('Sphere (2)', 'UpdateTextureFromURL', imageURL);
+        }
+
+        const albedoPicker = document.getElementById('albedo-tint-picker');
+        const specularSlider = document.getElementById('specular-slider');
+        const roughnessSlider = document.getElementById('roughness-slider');
+        const specularValueSpan = document.getElementById('specular-value');
+        const roughnessValueSpan = document.getElementById('roughness-value');
+        const brightnessSlider = document.getElementById('brightness-slider');
+        const brightnessValueSpan = document.getElementById('brightness-value');
+        
+
+        albedoPicker.addEventListener('input', (e) => {
+            // "Sphere (2)" GameObjectの "UpdateAlbedoTint" メソッドを呼び出す
+            unityInstance.SendMessage('Sphere (2)', 'UpdateAlbedoTint', e.target.value);
+        });
+
+        specularSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            // "Sphere (2)" GameObjectの "UpdateSpecular" メソッドを呼び出す
+            unityInstance.SendMessage('Sphere (2)', 'UpdateSpecular', value);
+            specularValueSpan.textContent = value.toFixed(2);
+        });
+
+        roughnessSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            // "Sphere (2)" GameObjectの "UpdateRoughness" メソッドを呼び出す
+            unityInstance.SendMessage('Sphere (2)', 'UpdateRoughness', value);
+            roughnessValueSpan.textContent = value.toFixed(2);
+        });
+
+        brightnessSlider.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value);
+            // "Sphere (2)" GameObjectの "Updatebrightness" メソッドを呼び出す
+            unityInstance.SendMessage('Sphere (2)', 'Updatebrightness', value);
+            brightnessValueSpan.textContent = value.toFixed(2);
+        });
+
+        document.getElementById('change-button').addEventListener('click', () => {
+            const newUrl = document.getElementById('url-input').value;
+            unityInstance.SendMessage('Sphere (2)', 'UpdateTextureFromURL', newUrl);
+        });
+
+        document.getElementById("capture-button").addEventListener("click", () => {
+            const imgElement_capture = document.getElementById('capture');
+            imgElement_capture.src = ""
+            unityInstance.SendMessage('Sphere (2)', "Execute");
+        });
+    }
+</script>
+<script>
+    const sourceImage = document.getElementById('unity-canvas');
+    const saveButton = document.getElementById("save-button")
+    const imgElement_capture = document.getElementById('capture');
+    const csrfToken = document.getElementById('csrf-token-input').value;
+
+    saveButton.addEventListener('click', () => {
+        const dataURL = imgElement_capture.src;
+        let lastResultBase64 = dataURL;
+
+        if (!lastResultBase64) {
+            alert('保存する画像がありません。');
+            return;
+        }
+
+        saveButton.disabled = true;
+        saveButton.textContent = '保存中...';
+
+        const formData = new FormData();
+        formData.append('photo_uuid', '{{ object.uuid }}');
+        formData.append('image_base64', lastResultBase64);
+
+        fetch("{% url 'api_save_segment' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    saveButton.textContent = '保存済み';
+                    // gounitybtn.style.display = "block";
+                    saveButton.style.display = "none";
+                    // nextURL = `{% url 'unity_host' %}{{ object.uuid }}?image=${data.url}`;
+                    location.href = `{% url 'photo_gallery3' %}`;
+
+                } else {
+                    alert('保存に失敗しました: ' + data.error);
+                    saveButton.disabled = false;
+                    saveButton.textContent = '確定して次へ';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('保存処理中に通信エラーが発生しました。');
+                saveButton.disabled = false;
+                saveButton.textContent = '確定して次へ';
+            });
+    });
+</script>
+
+{% endblock %}

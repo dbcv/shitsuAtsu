@@ -1,0 +1,30 @@
+{% load svg %}
+<div class="home-footer">
+    <div>
+        <div>
+            {% if user.is_authenticated %}
+            <a href="/home2">
+                {% svg 'home' %}
+                <span>HOME</span>
+            </a>
+            {% else %}
+            <a href="/">
+                {% svg 'home' %}
+                <span>HOME</span>
+            </a>
+            {% endif %}
+        </div>
+        <div>
+            <a href="/start">
+                {% svg 'add_a_photo' %}
+                <span>START</span>
+            </a>
+        </div>
+        <div>
+            <a href="/gallery2">
+                {% svg 'photo_library' %}
+                <span>GALLERY</span>
+            </a>
+        </div>
+    </div>
+</div>

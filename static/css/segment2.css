@@ -1,0 +1,145 @@
+:root {
+    --edit-area-height: calc(100dvh - 12rem);
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: #121212;
+    justify-content: flex-start;
+    overflow: hidden;
+}
+
+.canvas-container {
+    flex: 1;
+    /* 上部の余白を柔軟にとる */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    padding-bottom: 70px;
+    /* 下のツールバー分のスペースを確保 */
+}
+
+#canvas {
+    background-color: darkgray;
+    width: auto;
+    height: calc(100vh - 200px);
+    /* max-height: 1080px; */
+    aspect-ratio: 480 / 800;
+    touch-action: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.toolbar {
+    position: fixed;
+    bottom: 100px;
+    left: 0;
+    width: calc(100% - 20px);
+    height: 70px;
+    background: #121212;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    padding: 0 10px;
+    justify-content: center;
+    align-items: center;
+    font-size: min(1rem, 3vw);
+}
+
+button {
+    padding: 5px 10px;
+    border: 1px solid #707070;
+    border-radius: 0px;
+    background-color: #121212;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+button#p-pen.active {
+    background-color: #0040ff77;
+}
+
+button#n-pen.active {
+    background-color: #ff000077;
+}
+
+button#eraser.active {
+    background-color: #ffffff6d;
+}
+
+button:active {
+    background-color: rgb(13, 13, 13);
+}
+
+#edit-popover2 {
+    height: 80vh;
+    width: 80vw;
+
+    &>div {
+        display: block;
+        position: relative;
+
+        &>button {
+            position: absolute;
+            right: 0;
+        }
+    }
+}
+
+#edit-segmented-image {
+    width: -webkit-fill-available;
+    background: #00ff00;
+}
+
+.timerBar {
+    position: fixed;
+    background: transparent;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    bottom: 0px;
+
+    & .ring {
+        width: 30px;
+        height: 30px;
+        position: relative;
+
+        &>svg {
+            width: 100%;
+            height: 100%;
+
+            &>.base {
+                stroke: #000;
+                stroke-width: 10;
+                fill: none;
+            }
+
+            &>.progress {
+                stroke: #2ecc40;
+                stroke-width: 10;
+                fill: none;
+                stroke-linecap: round;
+                transform: rotate(-90deg);
+                transform-origin: 50% 50%;
+            }
+        }
+
+        &>.label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: sans-serif;
+            color: #333;
+        }
+    }
+}

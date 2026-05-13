@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load svg %}
+{% load static %}
+{% load static_tags %}
+
+{% block unique_css %}
+<link rel="stylesheet" href="{% static_ts 'css/home.css' %}">
+{% endblock %}
+
+{% block content %}
+  <h1>質感あつめ</h1>
+
+  {% if user.is_authenticated %}
+    <p>こんにちは、{{ user.username }}さん。</p>
+    <script>window.location.href="/home2"</script>
+  {% else %}
+    <p>このアプリを利用するには、<a href="{% url 'login' %}">ログイン</a>してください。</p>
+    <p>アカウントをお持ちでない場合は、<a href="{% url 'signup' %}">サインアップ</a>から登録できます。</p>
+  {% endif %}
+
+  <hr>
+
+  {% include "myq/home-footer.html" %}
+{% endblock %}

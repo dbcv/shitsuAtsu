@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load svg %}
+{% load static %}
+{% load static_tags %}
+
+{% block unique_css %}
+<link rel="stylesheet" href="{% static_ts 'css/start.css' %}">
+{% endblock %}
+
+{% block content %}
+<h1>開始</h1>
+<div class="startMenu">
+  <button class="startButton" popovertarget="start-caution">
+    <div>
+      <div>開始</div>
+    </div>
+  </button>
+  <div class="startHelp">
+    {% svg 'help' %}
+    <span>使い方</span>
+  </div>
+</div>
+<div id="start-caution" popover="auto">
+  <div>
+    <img src="{% static 'image/caution01.png' %}">
+    <p>⚠️撮影の際は、周囲の安全に十分ご注意ください。</p>
+    <p>⚠️撮影マナーを守り、周囲にご配慮ください。</p>
+    <div>
+      <button class="start-back" popovertarget="start-caution" popovertargetaction="hide">戻る</button>
+      <button class="start-go">撮影</button>
+      <form id="upload-form" style="margin-bottom: 20px;">
+        {% csrf_token %}
+        <input type="file" id="file-input" name="image" accept="image/*" capture="environment">
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelector("button.start-go").addEventListener("click", () => {
+    document.querySelector("input#file-input").click();
+  });
+</script>
+<script>
+  const fileInput = document.getElementById('file-input');
+  const uploadForm = document.getElementById('upload-form');
+  // const loadingSpinner = document.getElementById('loading-spinner'); // スピナーを取得
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    // loadingSpinner.style.display = 'block';
+
+    fetch("{% url 'upload' %}", {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrfToken,
+      },
+      body: formData,
+    })
+      .then(response => response.json())
+      .then(data => {
+
+        if (data.success && data.segment_url) {
+          window.location.href = data.segment_url;
+        } else {
+          alert(`エラーが発生しました: ${data.error}`);
+          // loadingSpinner.style.display = 'none';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('アップロード中に通信エラーが発生しました。');
+        // loadingSpinner.style.display = 'none';
+      });
+
+    uploadForm.reset();
+  });
+</script>
+{% include "myq/home-footer.html" %}
+{% endblock %}

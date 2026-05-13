@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load svg %}
+{% load static %}
+{% load static_tags %}
+
+{% block unique_css %}
+<link rel="stylesheet" href="{% static_ts 'css/gallery.css' %}">
+{% endblock %}
+
+{% block content %}
+<h1>ギャラリー</h1>
+{% include "myq/gallery-header.html" %}
+<div id="segmented" class="tab-pane">
+    <div class="gallery-grid">
+        {% for seg_photo in segmented_photos %}
+        <div class="gallery-item" id="photo-{{ seg_photo.uuid }}">
+            <a href="{{ seg_photo.get_image_url }}" target="_blank">
+                <img src="{{ seg_photo.get_image_url_256 }}" alt="{{ seg_photo }}" loading="lazy">
+            </a>
+            <button class="delete-button" data-uuid="{{ seg_photo.uuid }}" data-type="segmented">&times;</button>
+        </div>
+        {% empty %}
+        <p>画像はありません。</p>
+        {% endfor %}
+    </div>
+</div>
+
+{% include "myq/home-footer.html" %}
+{% endblock %}

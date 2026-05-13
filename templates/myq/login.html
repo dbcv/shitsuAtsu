@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% load static_tags %}
+
+{% block unique_css %}
+<link rel="stylesheet" href="{% static_ts 'css/login.css' %}">
+{% endblock %}
+
+{% block content %}
+  <h2>ログイン</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">ログイン</button>
+  </form>
+  
+  {% include "myq/home-footer.html" %}
+{% endblock %}

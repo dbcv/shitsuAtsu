@@ -1,0 +1,43 @@
+{% load static %}
+{% load static_tags %}
+{% load svg %}
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>質感あつめ</title>
+  <link rel="icon" href="{% static_ts 'image/favicon.ico' %}">
+  <link rel="stylesheet" href="{% static_ts 'css/style.css' %}">
+  {% block unique_css %}{% endblock %}
+</head>
+
+<body>
+  <header>
+    <nav>
+      <a href="/">ホーム</a> |
+      <a href="{% url 'photo_gallery' %}">ギャラリー</a> |
+      {% if user.is_authenticated %}
+      <span>こんにちは、{{ user.username }}さん</span> |
+      <form action="{% url 'logout' %}" method="post" style="display: inline;">
+        {% csrf_token %}
+        <button type="submit"
+          style="background: none; border: none; padding: 0; color: #0600ee; text-decoration: underline; cursor: pointer;">
+          ログアウト
+        </button>
+      </form>
+      {% else %}
+      <a href="{% url 'login' %}">ログイン</a> |
+      <a href="{% url 'signup' %}">サインアップ</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main>
+    {% block content %}
+    {% endblock %}
+  </main>
+  {% block unique_js %}{% endblock %}
+</body>
+
+</html>

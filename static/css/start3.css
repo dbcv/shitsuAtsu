@@ -1,0 +1,311 @@
+:where(.startMenu, #start-caution) button {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    outline: none;
+    padding: 0;
+    appearance: none;
+}
+
+.startMenu {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 60vh;
+    gap: 15px;
+
+    &>.startButton {
+        font-size: 4rem;
+        width: 60vw;
+        height: 60vw;
+        max-width: 60vh;
+        border-radius: 50%;
+        background-color: #4c4c4c;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+
+        &>div {
+            width: 97%;
+            height: 97%;
+            border-radius: 100%;
+            background-color: #2b2b2b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            background: linear-gradient(to bottom, #2c2c2c, #2c2c2c 45%, #201929 50%, #2c2c2c 55%, #2c2c2c);
+            background-size: 100% 1600%;
+            animation: moveGradient 8s linear infinite;
+            animation-delay: random(-8s, -0s);
+        }
+    }
+
+    &>.startHelp {
+        background-color: #3c3c3c;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 10px;
+        border-radius: 5px;
+        color: #ffffff;
+        font-size: 1rem;
+    }
+}
+
+#start-caution {
+    container-type: inline-size;
+    container-name: start-caution;
+
+    &>div {
+        &>img {
+            width: 80%;
+            max-width: 20rem;
+        }
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+
+        &>div {
+            margin-top: 10px;
+            display: grid;
+            /* flex-direction: row; */
+            grid-template-areas: "A B"
+                "C C";
+            align-items: center;
+            justify-content: space-evenly;
+            width: 100%;
+
+            &>button {
+                border: 2px solid transparent;
+                font-size: 1.5rem;
+                padding: 1rem 2rem;
+                border-radius: 1rem;
+            }
+
+            &>button.start-back {
+                grid-area: A;
+                border: 2px solid transparent;
+                background-color: transparent;
+                color: #121212;
+                font-size: 1.5rem;
+            }
+
+            &>button.start-go {
+                grid-area: B;
+                border: 2px solid #121212;
+                background-color: #121212;
+                color: #ffffff;
+                font-size: 1.5rem;
+            }
+
+            &>button.start-device {
+                grid-area: C;
+                border: 2px solid transparent;
+                background-color: transparent;
+                color: #121212;
+                font-size: 0.8rem;
+                text-decoration: underline;
+            }
+
+            &>form>input {
+                display: none;
+            }
+
+
+
+
+        }
+
+    }
+
+    padding: 1rem;
+    font-size: 0.8rem;
+    width: 75vw;
+    max-width: 20rem;
+    border-radius: 2rem;
+}
+
+#start-help {
+    container-name: help-container;
+    container-type: inline-size;
+
+    padding: 1rem;
+    font-size: 0.8rem;
+    width: 75vw;
+    max-width: 20rem;
+    border-radius: 2rem;
+}
+
+@container help-container (width > 0) {
+    #start-help {
+        &>#help-container {
+            --item-width: 100cqw;
+            --item-height: 100cqw;
+            --active-color: #121212;
+            width: var(--item-width);
+            position: relative;
+            display: grid;
+            grid-template-areas: "item item item" "left markers right";
+            grid-template-columns: 1fr 2fr 1fr;
+            row-gap: 16px;
+
+            &>#slide-container {
+                width: 100%;
+                display: grid;
+                grid-auto-flow: column;
+                grid-area: item;
+                gap: 120px;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                scroll-snap-stop: always;
+                scroll-behavior: smooth;
+                scroll-marker-group: after;
+                scrollbar-width: none;
+
+                &::scroll-button(*) {
+                    width: 50px;
+                    height: 50px;
+                    border-radius: 50%;
+                    border: none;
+                    background-color: #fff;
+                    padding: 0;
+                    color: var(--active-color);
+                    border: 1px solid var(--active-color);
+                    transition: background-color 0.2s, color 0.2s;
+                }
+
+                &::scroll-button(*):not(:disabled):active {
+                    background-color: var(--active-color);
+                    color: #fff;
+                    cursor: pointer;
+                }
+
+                @media (any-hover: hover) {
+                    &::scroll-button(*):not(:disabled):hover {
+                        background-color: var(--active-color);
+                        color: #fff;
+                        cursor: pointer;
+                    }
+                }
+
+                &::scroll-button(*):disabled {
+                    color: darkgray;
+                    border: 1px solid lightgray;
+                }
+
+                &::scroll-button(left) {
+                    content: "◀";
+                    grid-area: left;
+                    justify-self: end;
+                }
+
+                &::scroll-button(right) {
+                    content: "▶";
+                    grid-area: right;
+                }
+
+                &::scroll-marker-group {
+                    display: flex;
+                    justify-content: center;
+                    gap: 5px;
+                    grid-area: markers;
+                    align-items: center;
+                    scroll-snap-type: x mandatory;
+                    overscroll-behavior-x: contain;
+                }
+
+                &>.help-slide {
+                    width: var(--item-width);
+                    min-width: var(--item-width);
+                    height: var(--item-height);
+                    scroll-snap-align: center;
+                    display: grid;
+                    grid-template-rows: 80cqw 20qw;
+                    justify-items: center;
+                    justify-content: center;
+                    &>.image-area{
+                        &>img{
+                            height: 80cqw;
+                        }
+                    }
+
+                    &::scroll-marker {
+                        content: "";
+                        display: block;
+                        width: 12px;
+                        height: 12px;
+                        background-color: lightgray;
+                        border-radius: 50%;
+                        transition: background-color 0.2s;
+                        flex-shrink: 0;
+                    }
+
+                    &::scroll-marker:target-current {
+                        background-color: var(--active-color);
+                    }
+
+                    &>img {
+                        display: block;
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+.loading-spinner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(21, 21, 21, 0.8);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #ffffff;
+    border: none;
+    padding: 0;
+
+    &>.spinner {
+        width: 60px;
+        height: 60px;
+        border: 6px solid #ccc;
+        border-top-color: #000000;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 10px;
+    }
+}
+
+@container start-caution (width > 0px) {}
+
+@keyframes moveGradient {
+    0% {
+        background-position: 0% 25%;
+    }
+
+    100% {
+        background-position: 0% 75%;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

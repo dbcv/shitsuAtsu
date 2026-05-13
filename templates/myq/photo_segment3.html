@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load static %}
+{% load static_tags %}
+{% load svg %}
+
+{% block unique_css %}
+<link rel="stylesheet" href="{% static_ts 'css/segment3.css' %}">
+{% endblock %}
+{% block unique_js %}
+<script>
+    const objectuuid = '{{ object.uuid }}'
+    const imageURL = "{{ object.get_image_url }}"
+    const api_save_segment_URL = "{% url 'api_save_segment' %}"
+</script>
+<script src="{% static_ts 'js/segment3.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<a href="{% url 'api_segment_image2' %}"></a>
+
+<div class="canvas-container">
+    <canvas id="canvas" width="500" height="1000"></canvas>
+</div>
+
+<div id="bottomtools">
+    <div class="toolbar">
+        <button id="p-pen">{% svg 'add_circle' %}<span>範囲内マーカー</span></button>
+        <button id="n-pen">{% svg 'do_not_disturb_on' %}<span>範囲外マーカー</span></button>
+        <button id="eraser">{% svg 'ink_eraser' %}<span>マーカー消去</span></button>
+    </div>
+    <div id="timerCommentWrapper"><div id="timerComment"></div></div>
+    <div id="timerBar" class="timerBar">
+        <div class="ring" data-index="1">
+            <svg viewBox="0 0 100 100">
+                <circle class="base" cx="50" cy="50" r="40"></circle>
+                <circle class="progress" cx="50" cy="50" r="40"></circle>
+            </svg>
+            <div class="label">01</div>
+        </div>
+        <div class="ring" data-index="2">
+            <svg viewBox="0 0 100 100">
+                <circle class="base" cx="50" cy="50" r="40"></circle>
+                <circle class="progress" cx="50" cy="50" r="40"></circle>
+            </svg>
+            <div class="label">02</div>
+        </div>
+    </div>
+    <button id="save-button" class="elm-hide">確定して次へ</button>
+</div>
+
+
+
+<div id="edit-popover2" popover>
+    <div>
+        <img id="edit-segmented-image" src="{{ object.get_image_url }}">
+        <img id="segmented-image-save" src="" hidden>
+        <!-- <button id="save-button">確定して次へ</button> -->
+        <button id="edit-gounity" style="display: none;">次の工程に進む</button>
+    </div>
+</div>
+
+<input type="hidden" id="csrf-token-input" value="{{ csrf_token }}">
+
+
+
+{% endblock %}

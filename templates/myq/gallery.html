@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    /* タブのスタイル */
+    .tab-buttons {
+        border-bottom: 2px solid #ccc;
+        margin-bottom: 20px;
+    }
+
+    .tab-button {
+        padding: 10px 20px;
+        border: none;
+        background-color: transparent;
+        cursor: pointer;
+        font-size: 1.1em;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+    }
+
+    .tab-button.active {
+        border-bottom-color: #007bff;
+        font-weight: bold;
+    }
+
+    /* タブコンテンツのスタイル */
+    .tab-pane {
+        display: none;
+        /* デフォルトでは非表示 */
+    }
+
+    .tab-pane.active {
+        display: block;
+        /* activeクラスがついたものだけ表示 */
+    }
+
+    /* ギャラリーのスタイル */
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .gallery-item {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .gallery-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .gallery-item:hover img {
+        transform: scale(1.05);
+    }
+
+    .delete-button {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 28px;
+        height: 28px;
+        background-color: rgba(0, 0, 0, 0.6);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 28px;
+        text-align: center;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .gallery-item:hover .delete-button {
+        opacity: 1;
+    }
+</style>
+
+<h2>ギャラリー</h2>
+
+<div class="tab-buttons">
+    <button class="tab-button active" data-tab="originals">元画像</button>
+    <button class="tab-button" data-tab="segmented">切り抜き画像</button>
+</div>
+
+<input type="hidden" id="csrf-token-input" value="{{ csrf_token }}">
+
+<div class="tab-content">
+    <div id="originals" class="tab-pane active">
+        <h3>元画像一覧</h3>
+        <div class="gallery-grid">
+            {% for photo in original_photos %}
+            <div class="gallery-item" id="photo-{{ photo.uuid }}">
+                <a href="{% url 'photo_segment' uuid=photo.uuid %}">
+                    <img src="{{ photo.get_image_url }}" alt="{{ photo.title }}">
+                </a>
+                <button class="delete-button" data-uuid="{{ photo.uuid }}" data-type="original">&times;</button>
+            </div>
+            {% empty %}
+            <p>アップロードされた元画像はありません。</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="segmented" class="tab-pane">
+        <h3>切り抜き画像一覧</h3>
+        <div class="gallery-grid">
+            {% for seg_photo in segmented_photos %}
+            <div class="gallery-item" id="photo-{{ seg_photo.uuid }}">
+                <a href="{{ seg_photo.get_image_url }}" target="_blank">
+                    <img src="{{ seg_photo.get_image_url }}" alt="{{ seg_photo }}">
+                </a>
+                <button class="delete-button" data-uuid="{{ seg_photo.uuid }}" data-type="segmented">&times;</button>
+            </div>
+            {% empty %}
+            <p>作成された切り抜き画像はありません。</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // すべてのボタンとパネルから active クラスを削除
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            tabPanes.forEach(pane => pane.classList.remove('active'));
+
+            // クリックされたボタンに active クラスを追加
+            button.classList.add('active');
+
+            // 対応するパネルを表示
+            const tabId = button.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+    const csrfToken = document.getElementById('csrf-token-input').value;
+    const galleryGrid = document.querySelector('.gallery-grid');
+
+    // イベント委譲を使って、ギャラリー全体でクリックイベントを監視
+    document.querySelector('.tab-content').addEventListener('click', function (event) {
+        // クリックされたのが削除ボタンかチェック
+        if (event.target.classList.contains('delete-button')) {
+            const button = event.target;
+            const imageUuid = button.dataset.uuid;
+            const imageType = button.dataset.type;
+
+            // ユーザーに確認
+            if (confirm('この画像を本当に削除しますか？この操作は元に戻せません。')) {
+                const formData = new FormData();
+                formData.append('uuid', imageUuid);
+                formData.append('type', imageType);
+
+                fetch("{% url 'api_delete_image' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // 成功したら、DOMから画像要素を削除
+                            const imageElement = document.getElementById(`photo-${imageUuid}`);
+                            if (imageElement) {
+                                imageElement.remove();
+                            }
+                        } else {
+                            alert('削除に失敗しました: ' + data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('削除処理中に通信エラーが発生しました。');
+                    });
+            }
+        }
+    });
+</script>
+
+{% endblock %}

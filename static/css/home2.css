@@ -1,0 +1,44 @@
+#playground {
+    anchor-name: --home-anchor;
+    overflow: hidden;
+    position: relative;
+    height: 60vh;
+    user-select: none;
+}
+
+.tree-div {
+    position: absolute;
+    transform: translate(-25%, 0%);
+    overflow: hidden;
+    height: 60vh;
+}
+
+.tree {
+    filter: blur(15px);
+    height: inherit;
+}
+
+.tree-photo {
+    opacity: 0.8;
+}
+
+#imgset {
+    /* ① 固定サイズを指定 */
+    width: 1500px;
+    height: 1500px;
+    overflow: hidden;
+
+    /* ② 子要素(ball)の位置指定の基準にする */
+    position: relative;
+    transform: translate(-50%, 0px);
+}
+
+/* 画像のスタイル（変更なし） */
+.ball {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    position: absolute;
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+}
