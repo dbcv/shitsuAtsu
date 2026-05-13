@@ -67,12 +67,5 @@ class Home3View(LoginRequiredMixin, TemplateView):
         context['count_segment'] = [{"imgurl":image_url, "count":image_count}]
         return context
 
-class StartView(TemplateView):
-    template_name = 'myq/start.html'
-
-
-class Start2View(LoginRequiredMixin, TemplateView):
-    template_name = 'myq/start2.html'
-
 class Start3View(LoginRequiredMixin, TemplateView):
     template_name = 'myq/start3.html'

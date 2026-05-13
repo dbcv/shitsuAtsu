@@ -31,9 +31,6 @@ class SignUpView(generic.CreateView):
 class HomeView(TemplateView):
     template_name = 'myq/home.html'
 
-class StartView(TemplateView):
-    template_name = 'myq/start.html'
-
 class PhotoUploadView(LoginRequiredMixin, TemplateView):
     template_name = 'myq/upload.html'
 
@@ -153,13 +150,3 @@ def delete_image_api(request):
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-
-
-class UnityView(LoginRequiredMixin, generic.DetailView):
-    model = Photo
-    template_name = 'myq/unity_host.html'
-    slug_field = 'uuid'
-    slug_url_kwarg = 'uuid'
-
-    def get_queryset(self):
-        return Photo.objects.filter(owner=self.request.user)
