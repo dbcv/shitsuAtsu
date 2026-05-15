@@ -153,70 +153,6 @@ def convert_to_optimized_bw(image: Image.Image) -> Image.Image:
 @csrf_exempt
 @require_POST
 @login_required
-def segment_image_api2_sam2(request):
-    if SAM2_PREDICTOR is None:
-        return JsonResponse({'error': 'Model not loaded'}, status=503)
-
-    try:
-        ppoints = json.loads(request.POST.get('ppoints'))
-        npoints = json.loads(request.POST.get('npoints'))
-        input_point = []
-        input_label = []
-        for p in ppoints:
-            input_point.append([p["x"],p["y"]])
-            input_label.append(1)
-        for p in npoints:
-            input_point.append([p["x"],p["y"]])
-            input_label.append(0)
-        
-        photo_uuid = request.POST.get('photo_uuid')
-
-        original_photo = get_object_or_404(Photo, uuid=photo_uuid, owner=request.user)
-        
-        image_pil_raw = Image.open(original_photo.image.path)
-        
-        image_pil = ImageOps.exif_transpose(image_pil_raw).convert("RGB")
-        
-        image_np = np.array(image_pil)
-        
-        SAM2_PREDICTOR.set_image(image_np)
-        input_point = np.array(input_point)
-        input_label = np.array(input_label)
-
-        # print(input_point)
-
-        masks, scores, _ = SAM2_PREDICTOR.predict(
-            point_coords=input_point,
-            point_labels=input_label,
-            multimask_output=False,
-        )
-        image64 = []
-        
-        cropmasks = list(map(lambda x:crop_with_mask(image_pil,x), masks))
-        cropmasks2 = list(map(lambda x:crop_with_mask(image_pil,max_square_submatrix(x)), masks))
-
-        buffered = io.BytesIO()
-        image = apply_mask_to_cutout(image_pil, masks[0])
-        image = convert_to_optimized_bw(image)
-        image.save(buffered, format="PNG", optimize=True)
-        img_str = base64.b64encode(buffered.getvalue()).decode()
-        image64.append(img_str)
-
-        buffered2 = io.BytesIO()
-        image2 = crop_with_mask(image_pil,max_square_submatrix(masks[0]))
-        image2.save(buffered2, format="PNG", optimize=True)
-        img_str2 = base64.b64encode(buffered2.getvalue()).decode()
-        
-        print(masks)
-        masks = masks.tolist()
-        return JsonResponse({'success': True, 'image_base64': image64, 'crop' : img_str2})
-
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-@csrf_exempt
-@require_POST
-@login_required
 def segment_image_api2(request):
     if SAM3_PROCESSOR is None:
         return JsonResponse({'error': 'Model not loaded'}, status=503)
@@ -224,6 +160,7 @@ def segment_image_api2(request):
     try:
         ppoints = json.loads(request.POST.get('ppoints'))
         npoints = json.loads(request.POST.get('npoints'))
+        description = request.POST.get('description')
         input_point = []
         input_label = []
         for p in ppoints:
@@ -244,7 +181,7 @@ def segment_image_api2(request):
         
         with torch.autocast("cuda", dtype=torch.bfloat16):
             inference_state = SAM3_PROCESSOR.set_image(image_pil)
-            output = SAM3_PROCESSOR.set_text_prompt(state=inference_state, prompt="cat")
+            output = SAM3_PROCESSOR.set_text_prompt(state=inference_state, prompt=description)
         
         input_point = np.array(input_point)
         input_label = np.array(input_label)
@@ -254,6 +191,7 @@ def segment_image_api2(request):
         masks, boxes, scores = output["masks"], output["boxes"], output["scores"]
         
         m = output["masks"]
+        print(m)
         print("type(output['masks']):", type(m))
 
         if hasattr(m, "shape"):

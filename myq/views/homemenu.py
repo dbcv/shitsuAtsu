@@ -31,24 +31,6 @@ class SignUpView(generic.CreateView):
 class HomeView(TemplateView):
     template_name = 'myq/home.html'
 
-class Home2View(LoginRequiredMixin, TemplateView):
-    template_name = 'myq/home2.html'
-
-    def get_context_data(self, **kwargs):
-
-        context = super().get_context_data(**kwargs)
-
-        
-
-        context['segmented_photos'] = SegmentedPhoto.objects.filter(
-            owner=self.request.user
-        ).order_by('-created_at')
-        image_count = len(context['segmented_photos'])
-        image_url = static(f'image/tree/{("000"+str(int(image_count/4)))[-3:]}.png')
-
-        context['count_segment'] = [{"imgurl":image_url, "count":image_count}]
-        return context
-
 class Home3View(LoginRequiredMixin, TemplateView):
     template_name = 'myq/home3.html'
 

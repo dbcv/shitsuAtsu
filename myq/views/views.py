@@ -28,14 +28,13 @@ class SignUpView(generic.CreateView):
     success_url = reverse_lazy('login')
     template_name = 'myq/signup.html'
 
-class HomeView(TemplateView):
-    template_name = 'myq/home.html'
-
 class PhotoUploadView(LoginRequiredMixin, TemplateView):
     template_name = 'myq/upload.html'
 
     def post(self, request, *args, **kwargs):
         file = request.FILES.get('image')
+        description = request.POST.get('description')
+        print(f"Received file: {file}, description: {description}")  # デバッグ用ログ
         if not file:
             return JsonResponse({'error': 'ファイルが選択されていません。'}, status=400)
 
@@ -45,7 +44,7 @@ class PhotoUploadView(LoginRequiredMixin, TemplateView):
 
             photo = Photo(
                 image=file,
-                title=file_title,
+                title=description,
                 original_filename=original_name,
                 owner=request.user
             )

@@ -35,6 +35,10 @@
       <button class="start-back" popovertarget="start-caution" popovertargetaction="hide">戻る</button>
       <button class="start-go">撮影</button>
       <button class="start-device">端末内に保存されている画像から選択する</button>
+      <div style="margin-top: 15px; margin-bottom: 20px;">
+        <label for="description-input" style="display: block; margin-bottom: 5px; font-size: 0.9rem;">撮影対象物の詳細:</label>
+        <input type="text" id="description-input" placeholder="例: 緑色の机、茶色の椅子など" style="width: 95%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+      </div>
       <form id="upload-form" style="margin-bottom: 20px;">
         {% csrf_token %}
         <input type="file" id="file-input" name="image" accept="image/*" capture="environment">

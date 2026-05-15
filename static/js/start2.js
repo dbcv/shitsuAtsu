@@ -4,22 +4,35 @@ const loadingSpinner = document.getElementById('loading-spinner');
 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
 document.querySelector("button.start-go").addEventListener("click", () => {
+    const description = document.getElementById('description-input') ? document.getElementById('description-input').value.trim() : '';
+    if (!description) {
+        alert('撮影対象物の詳細を入力してください。');
+        return;
+    }
     fileInput.setAttribute("capture", "environment");
     fileInput.click();
 });
 document.querySelector("button.start-device").addEventListener("click", () => {
+    const description = document.getElementById('description-input') ? document.getElementById('description-input').value.trim() : '';
+    if (!description) {
+        alert('撮影対象物の詳細を入力してください。');
+        return;
+    }
     fileInput.removeAttribute("capture");
     fileInput.click();
 });
 
 fileInput.addEventListener('change', () => {
     const file = fileInput.files[0];
+    const description = document.getElementById('description-input') ? document.getElementById('description-input').value : '';
+
     if (!file) {
         return;
     }
 
     const formData = new FormData();
     formData.append('image', file);
+    formData.append('description', description);
 
     loadingSpinner.style.display = 'flex';
     loadingSpinner.showPopover()

@@ -19,10 +19,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from myq.views.views import HomeView
 urlpatterns = [
-    # サイトのルートURL ('') へのアクセスはHomeViewを呼び出す
-    
     path('admin/', admin.site.urls),
     path('', include('myq.urls')),
     path('accounts/', include('myq.account-urls')),

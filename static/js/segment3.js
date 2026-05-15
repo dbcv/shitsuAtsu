@@ -317,6 +317,7 @@ function redraw(sendSam2 = true, start = false, end = false) {
             formData.append('photo_uuid', objectuuid);
             formData.append('ppoints', JSON.stringify(tmp_positive_points));
             formData.append('npoints', JSON.stringify(tmp_negative_points));
+            formData.append('description', imageDescription);
             console.log(formData);
 
             controller = new AbortController();

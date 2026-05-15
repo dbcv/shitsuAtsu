@@ -7,7 +7,7 @@ from .views.views import PhotoUploadView,\
 
 from .views.gallery import PhotoGalleryView, PhotoGallery2View, PhotoGallery3View
 from .views.segment import PhotoSegment3View, segment_image_api2
-from .views.homemenu import SignUpView, HomeView, Home2View, Home3View, Start3View
+from .views.homemenu import SignUpView, HomeView, Home3View, Start3View
 from .views.autoLogin import auto_login_view
 from .views.photoserve import serve_photo2, serve_segmented_photo2
 from .views.iconserve import faviconserve
@@ -15,7 +15,6 @@ from .views.iconserve import faviconserve
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     path('home2/', Home3View.as_view(), name='home2'),
-    path('home-old01/', Home2View.as_view(), name='home3'),
     path("start/", Start3View.as_view(), name="start"),
     path('upload/', PhotoUploadView.as_view(), name='upload'),
     path('photos/<uuid:uuid>/segment/', PhotoSegment3View.as_view(), name='photo_segment'),
