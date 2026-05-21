@@ -11,6 +11,7 @@ from .views.homemenu import SignUpView, HomeView, Home3View, Start3View
 from .views.autoLogin import auto_login_view
 from .views.photoserve import serve_photo2, serve_segmented_photo2
 from .views.iconserve import faviconserve
+from .views.reflectance import ThreeView
 
 urlpatterns = [
     path('', HomeView.as_view(), name='home'),
@@ -30,4 +31,5 @@ urlpatterns = [
     path('api/delete_image/', delete_image_api, name='api_delete_image'),
     path('autologin/', auto_login_view, name='auto_login'),
     path('favicon.ico', faviconserve, name='faviconserve'),
+    path('reflectance/<uuid:uuid>/', ThreeView.as_view(), name='reflectance_view'),
 ]

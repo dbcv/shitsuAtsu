@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load static %}
+{% load static_tags %}
+{% load svg %}
+
+{% block unique_css %}
+<link rel="stylesheet" href="{% static_ts 'css/reflectance.css' %}">
+{% endblock %}
+
+
+{% block unique_js %}
+
+<script type="importmap">
+{
+    "imports": {
+        "three": "{% static 'js/three@0.184.0/build/three.module.js' %}",
+        "three/addons/": "{% static 'js/three@0.184.0/examples/jsm/' %}"
+    }
+}
+</script>
+
+<script>
+    const objectuuid = '{{ object.uuid }}'
+    const imageURL = "{{ object.get_image_url }}"
+    const imageDescription = "{{ object.title }}"
+    const api_save_segment_URL = "{% url 'api_save_segment' %}"
+
+    const modelURL = "{% static 'models/model.glb' %}"
+    const hdriURL = "{% static 'hdri/studio_small_09_1k.hdr' %}"
+</script>
+
+<script type="module" src="{% static 'js/reflectance.js' %}"></script>
+
+{% endblock %}
+
+
+{% block content %}
+
+<div id="three-container"></div>
+
+{% endblock %}

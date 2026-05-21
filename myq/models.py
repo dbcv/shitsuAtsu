@@ -6,6 +6,7 @@ from django.utils import timezone
 import uuid
 import os
 from django.urls import reverse
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 def upload_to_uuid_path(instance, filename):
     ext = os.path.splitext(filename)[1]
@@ -55,6 +56,23 @@ class SegmentedPhoto(models.Model):
 
     image = models.ImageField(verbose_name='切り抜き画像', upload_to=upload_to_uuid_path)
     created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
+    # Reflection parameters
+    diffuse_reflectance = models.FloatField(
+        verbose_name='拡散反射率',
+        default=0.0,
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+    )
+    specular_reflectance = models.FloatField(
+        verbose_name='鏡面反射率',
+        default=0.0,
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+    )
+    albedo = models.CharField(
+        verbose_name='アルベド',
+        max_length=7,
+        default='#FFFFFF',
+        help_text='Hex color code, e.g., #FFAA00',
+    )
 
     def __str__(self):
         if self.original_photo:
