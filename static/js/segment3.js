@@ -466,7 +466,7 @@ saveButton.addEventListener('click', () => {
             if (data.success) {
                 saveButton.textContent = '保存済み';
                 saveButton.style.display = "none";
-                location.href = `/gallery3`;
+                location.href = `/reflectance/${data.uuid}/`;
             } else {
                 alert('保存に失敗しました: ' + data.error);
                 saveButton.disabled = false;

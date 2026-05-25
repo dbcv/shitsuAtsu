@@ -25,11 +25,11 @@ class Photo(models.Model):
         return self.title
 
     def get_image_url(self):
-        return reverse('serve_photo', kwargs={'uuid': self.uuid})
+        return reverse('serve_photo', kwargs={'uuid': self.uuid, "ext": "webp"})
 
     def get_image_url_256(self):
-        return reverse('serve_photo2', kwargs={'uuid': self.uuid, "width": 256})
-    
+        return reverse('serve_photo', kwargs={'uuid': self.uuid, "width": 256, "ext": "webp"})
+
     def delete(self, *args, **kwargs):
         storage, path = self.image.storage, self.image.path
         super().delete(*args, **kwargs)
@@ -80,13 +80,13 @@ class SegmentedPhoto(models.Model):
         return f"Segmented photo by {self.owner.username} (Original deleted)"
 
     def get_image_url(self):
-        return reverse('serve_segmented_photo', kwargs={'uuid': self.uuid})
+        return reverse('serve_segmented_photo', kwargs={'uuid': self.uuid, "ext": "webp"})
 
     def get_image_url_256(self):
-        return reverse('serve_segmented_photo2', kwargs={'uuid': self.uuid, "width": 256})
+        return reverse('serve_segmented_photo', kwargs={'uuid': self.uuid, "width": 256, "ext": "webp"})
     
     def get_image_url_64(self):
-        return reverse('serve_segmented_photo2', kwargs={'uuid': self.uuid, "width": 64})
+        return reverse('serve_segmented_photo', kwargs={'uuid': self.uuid, "width": 64, "ext": "webp"})
 
     def delete(self, *args, **kwargs):
         storage, path = self.image.storage, self.image.path

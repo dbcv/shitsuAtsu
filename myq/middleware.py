@@ -1,4 +1,5 @@
 from .models import AccessLog
+import time
 from django.utils.deprecation import MiddlewareMixin
 
 class AccessLogMiddleware(MiddlewareMixin):
@@ -30,3 +31,26 @@ class AccessLogMiddleware(MiddlewareMixin):
         if x_forwarded_for:
             return x_forwarded_for.split(',')[0]
         return request.META.get('REMOTE_ADDR')
+
+class TimingMiddleware(MiddlewareMixin):
+
+    def process_request(self, request):
+        request.start_time = time.perf_counter()
+
+    def process_response(self, request, response):
+        elapsed = time.perf_counter() - getattr(request, 'start_time', time.perf_counter())
+        latency_ms = elapsed * 1000
+        response['X-Request-Latency-ms'] = f'{latency_ms:.2f}'
+
+        if hasattr(response, 'content'):
+            size = len(response.content)
+        elif hasattr(response, 'streaming_content'):
+            size = 0
+            for chunk in response.streaming_content:
+                size += len(chunk)
+        else:
+            size = 0
+
+        response['X-Response-Size-bytes'] = str(size)
+        print(f"Request to {request.path} took {latency_ms:.2f} ms and returned {size} bytes")
+        return response

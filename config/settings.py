@@ -61,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'myq.middleware.AccessLogMiddleware',
+    'myq.middleware.TimingMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'

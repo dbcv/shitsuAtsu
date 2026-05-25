@@ -177,6 +177,8 @@ def segment_image_api2(request):
         image_pil_raw = Image.open(original_photo.image.path)
         
         image_pil = ImageOps.exif_transpose(image_pil_raw).convert("RGB")
+
+        print(f"Received segmentation request: {len(input_point)} points, description: {description}, photo_uuid: {photo_uuid}")
         
         
         with torch.autocast("cuda", dtype=torch.bfloat16):

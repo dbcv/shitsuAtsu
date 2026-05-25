@@ -44,9 +44,10 @@ class PhotoUploadView(LoginRequiredMixin, TemplateView):
 
             photo = Photo(
                 image=file,
-                title=description,
+                title=original_name+" - "+description,
                 original_filename=original_name,
-                owner=request.user
+                owner=request.user,
+                description=description
             )
             photo.save()
 
@@ -60,10 +61,7 @@ class PhotoUploadView(LoginRequiredMixin, TemplateView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-@login_required
-def serve_photo(request, uuid):
-    photo = get_object_or_404(Photo, uuid=uuid, owner=request.user)
-    return FileResponse(open(photo.image.path, 'rb'))
+
 
 
 class PhotoSegmentView(LoginRequiredMixin, generic.DetailView):
@@ -99,11 +97,13 @@ def save_segmented_image(request):
         segmented_photo.save()
 
         saved_image_url = segmented_photo.get_image_url()
+        saved_image_uuid = segmented_photo.uuid
 
         return JsonResponse({
             'success': True, 
             'message': '切り抜き画像を保存しました。',
-            'url': saved_image_url
+            'url': saved_image_url,
+            'uuid': saved_image_uuid
         })
 
     except Exception as e:

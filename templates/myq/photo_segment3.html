@@ -9,7 +9,7 @@
 <script>
     const objectuuid = '{{ object.uuid }}'
     const imageURL = "{{ object.get_image_url }}"
-    const imageDescription = "{{ object.title }}"
+    const imageDescription = "{{ object.description }}"
     const api_save_segment_URL = "{% url 'api_save_segment' %}"
 </script>
 <script src="{% static_ts 'js/segment3.js' %}"></script>
