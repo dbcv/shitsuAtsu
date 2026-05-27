@@ -1,16 +1,45 @@
 services:
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    command: >
+      sh -c "
+      uv run manage.py migrate &&
+      uv run manage.py runserver 0.0.0.0:8000
+      "
     volumes:
       - .:/app
+      - /app/.venv
+      - huggingface_cache:/root/.cache/huggingface
     working_dir: /app
     ports:
       - "8000:8000"
+      - "32803:32803"
+    env_file:
+      - .env
+    environment:
+      HF_HOME: /root/.cache/huggingface
     depends_on:
       - redis
+      - db
+    gpus: all
+    restart: unless-stopped
 
   redis:
     image: redis:8.6
     ports:
       - "6379:6379"
+    restart: unless-stopped
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: djangoimedb
+      POSTGRES_USER: djangoime01
+      POSTGRES_PASSWORD: djangoime01
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  huggingface_cache:

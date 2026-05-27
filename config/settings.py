@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "rest_framework",
     'myq.apps.MyqConfig',
     'myq.templatetags.static_tags',
     'dj_svg',
