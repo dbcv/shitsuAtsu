@@ -15,7 +15,7 @@ services:
       - "8000:8000"
       - "32803:32803"
     env_file:
-      - .env
+      - .env.docker
     environment:
       HF_HOME: /root/.cache/huggingface
     depends_on:

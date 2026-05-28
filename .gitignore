@@ -19,6 +19,7 @@ Thumbs.db
 *.log
 
 .env
+.env.docker
 
 launch_command.txt
 autoLoginGenerate.py

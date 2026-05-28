@@ -12,11 +12,11 @@
 <h1>設定画面</h1>
 
 {% if messages %}
-  <ul class="messages">
-    {% for message in messages %}
-      <li>{{ message }}</li>
-    {% endfor %}
-  </ul>
+<ul class="messages">
+  {% for message in messages %}
+  <li>{{ message }}</li>
+  {% endfor %}
+</ul>
 {% endif %}
 
 <h3>プロフィール情報</h3>
@@ -31,6 +31,13 @@
   {% csrf_token %}
   {{ password_form.as_p }}
   <button type="submit" name="change_password">変更</button>
+</form>
+
+<form action="{% url 'logout' %}" method="post">
+  {% csrf_token %}
+  <button type="submit" class="logout">
+    ログアウト
+  </button>
 </form>
 {% include "myq/home-footer.html" %}
 {% endblock %}

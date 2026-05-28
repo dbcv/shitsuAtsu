@@ -7,6 +7,7 @@ import uuid
 import os
 from django.urls import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import RegexValidator
 
 def upload_to_uuid_path(instance, filename):
     ext = os.path.splitext(filename)[1]
@@ -72,6 +73,7 @@ class SegmentedPhoto(models.Model):
         max_length=7,
         default='#FFFFFF',
         help_text='Hex color code, e.g., #FFAA00',
+        validators=[RegexValidator(regex=r'^#[0-9A-Fa-f]{6}$')],
     )
 
     def __str__(self):
