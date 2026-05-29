@@ -1,15 +1,19 @@
-from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
 from django.contrib.auth.forms import PasswordChangeForm
+from django.shortcuts import redirect, render
 
 from ..forms import ProfileForm, SimplePasswordChangeForm
 from ..models import Profile
 
+
 @login_required
 def setting_view(request):
-    profile = request.user.profile
+    profile = Profile.objects.get_or_create(user=request.user)
+    profile = profile[0]
+    print(request.user.profile)
+    print(profile)
     if request.method == 'POST':
         profile_form = ProfileForm(request.POST, instance=profile)
         password_form = SimplePasswordChangeForm(request.POST)

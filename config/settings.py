@@ -11,9 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+
 import environ
-
-
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,7 +30,7 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG', default=False)
 
 ALLOWED_HOSTS = env.list('HOSTS', default=["localhost"])
-CSRF_TRUSTED_ORIGIONS = env.list('ORIGINS', default=["localhost"])
+CSRF_TRUSTED_ORIGINS = env.list('ORIGINS', default=["localhost"])
 CSRF_ALLOWED_ORIGINS =  env.list('ORIGINS', default=["localhost"])
 CORS_ORIGINS_WHITELIST =  env.list('ORIGINS', default=["localhost"])
 CSRF_COOKIE_SECURE = True
@@ -92,6 +91,16 @@ DATABASES = {
     'default': env.db('DATABASE_URL', default='sqlite:///db.sqlite3')
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": env('REDIS_CACHE_URL', default='redis://localhost:6379/1'),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -140,6 +149,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 import os
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 SVG_DIR = os.path.join(BASE_DIR, "static/svg")
@@ -149,3 +159,9 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/' # ログアウト後のリダイレクト先も指定しておくと明示的
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 99999999
+
+HF_TOKEN = env('HF_TOKEN')
+OLLAMA_HOST = env('OLLAMA_HOST', default='http://localhost:11434')
+OLLAMA_MODEL = env('OLLAMA_MODEL', default='gemma4:e4b')
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/0')

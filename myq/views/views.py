@@ -1,27 +1,26 @@
 # myq/views.py
-from django.contrib.auth.forms import UserCreationForm
-from django.urls import reverse_lazy
-from django.views import generic
-from django.views.generic import TemplateView, CreateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
-from ..models import Photo, SegmentedPhoto
-from django.shortcuts import get_object_or_404
-from django.http import FileResponse, HttpResponseForbidden
-from django.contrib.auth.decorators import login_required
-import os
-import torch
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
-from PIL import Image, ImageOps
 import base64
-from ..apps import SAM2_PREDICTOR, SAM3_PROCESSOR
-import io
-import numpy as np
-from django.urls import reverse
-from django.core.files.base import ContentFile
+import os
 import uuid
+
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
+from django.core.files.base import ContentFile
+from django.http import FileResponse, JsonResponse
+from django.shortcuts import get_object_or_404
+from django.urls import reverse, reverse_lazy
+from django.views import generic
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.views.generic import TemplateView
+from django.db import transaction
+
 from ..forms import SimpleSignUpForm
+from ..models import Photo, SegmentedPhoto
+from ..tasks import analyze_material
+from ..tasks import crop
+
 
 class SignUpView(generic.CreateView):
     form_class = SimpleSignUpForm
@@ -50,6 +49,7 @@ class PhotoUploadView(LoginRequiredMixin, TemplateView):
                 description=description
             )
             photo.save()
+            analyze_material.delay(photo.id)
 
             segment_url = reverse('photo_segment', kwargs={'uuid': photo.uuid})
 
@@ -78,23 +78,31 @@ class PhotoSegmentView(LoginRequiredMixin, generic.DetailView):
 def save_segmented_image(request):
     try:
         photo_uuid = request.POST.get('photo_uuid')
-        image_base64_data = request.POST.get('image_base64')
+        session_id = request.POST.get('session_id')
 
-        if not photo_uuid or not image_base64_data:
+        if not photo_uuid or not session_id:
             return JsonResponse({'error': '必要なデータが不足しています。'}, status=400)
 
         original_photo = get_object_or_404(Photo, uuid=photo_uuid, owner=request.user)
 
-        format, imgstr = image_base64_data.split(';base64,') 
-        ext = format.split('/')[-1]
-        image_data = ContentFile(base64.b64decode(imgstr), name=f'seg_{uuid.uuid4()}.{ext}')
+        # セッションIDからマスクデータを取得
+        cached_data = cache.get(f"segment:{session_id}")
+        if not cached_data:
+            return JsonResponse({'error': 'セッションデータが見つかりません。'}, status=400)
+
 
         segmented_photo = SegmentedPhoto(
             original_photo=original_photo,
-            image=image_data,
             owner=original_photo.owner
         )
         segmented_photo.save()
+
+        transaction.on_commit(
+            lambda: crop.delay(
+                segmented_photo.uuid,
+                session_id
+            )
+        )
 
         saved_image_url = segmented_photo.get_image_url()
         saved_image_uuid = segmented_photo.uuid

@@ -8,6 +8,7 @@ const saveButton = document.getElementById('save-button');
 let lastResultBase64 = null;
 const csrfToken = document.getElementById('csrf-token-input').value;
 let controller = null;
+let sessionId = null;
 
 class TimerBar {
     constructor(root) {
@@ -332,8 +333,9 @@ function redraw(sendSam2 = true, start = false, end = false) {
                     timer.controlTimer(2, 360, 0.5);
                     if (data.success) {
                         editSegmentedImageElement.src = `data:image/png;base64,${data.image_base64}`;
-                        saveSegmentedImageElement.src = `data:image/png;base64,${data.crop}`;
-                        lastResultBase64 = `data:image/png;base64,${data.crop}`;
+                        sessionId = data.session_id;
+                        //saveSegmentedImageElement.src = `data:image/png;base64,${data.crop}`;
+                        //lastResultBase64 = `data:image/png;base64,${data.crop}`;
                         loadOverlayImage(`data:image/png;base64,${data.image_base64}`);
                         controller = null;
                     } else {
@@ -452,7 +454,7 @@ saveButton.addEventListener('click', () => {
 
     const formData = new FormData();
     formData.append('photo_uuid', objectuuid);
-    formData.append('image_base64', lastResultBase64);
+    formData.append('session_id', sessionId);
 
     fetch(api_save_segment_URL, {
         method: 'POST',

@@ -1,26 +1,62 @@
 # myq/models.py
-from django.db import models
-from django.contrib.auth.models import User
-from django.conf import settings
-from django.utils import timezone
-import uuid
 import os
+import uuid
+
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.validators import (MaxValueValidator, MinValueValidator,
+                                    RegexValidator)
+from django.db import models
 from django.urls import reverse
-from django.core.validators import MinValueValidator, MaxValueValidator
-from django.core.validators import RegexValidator
+from django.utils import timezone
+
 
 def upload_to_uuid_path(instance, filename):
     ext = os.path.splitext(filename)[1]
     return f'photos/{uuid.uuid4()}{ext}'
 
+def upload_to_photo_path(instance, filename):
+    ext = os.path.splitext(filename)[1]
+    return f'photos/{instance.owner.username}/photo/{uuid.uuid4()}{ext}'
+
+def upload_to_segmented_path(instance, filename):
+    ext = os.path.splitext(filename)[1]
+    return f'photos/{instance.owner.username}/segmented/{uuid.uuid4()}{ext}'
+
+def upload_to_npy_path(instance, filename):
+    ext = os.path.splitext(filename)[1]
+    return f'photos/{instance.owner.username}/npy/{uuid.uuid4()}{ext}'
+
 class Photo(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     title = models.CharField(verbose_name='タイトル', max_length=200)
-    image = models.ImageField(verbose_name='画像', upload_to=upload_to_uuid_path)
+    image = models.ImageField(verbose_name='画像', upload_to=upload_to_photo_path)
     owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='所有者')
     original_filename = models.CharField(verbose_name='元のファイル名', max_length=255)
     description = models.TextField(verbose_name='説明', blank=True, null=True)
     uploaded_at = models.DateTimeField(verbose_name='アップロード日時', auto_now_add=True)
+
+    # Reflection parameters 推定値
+
+    roughness = models.FloatField(
+        verbose_name='roughness',
+        default=0.0,
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+    )
+
+    metalness = models.FloatField(
+        verbose_name='metalness',
+        default=0.0,
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+    )
+
+    albedo = models.CharField(
+        verbose_name='アルベド',
+        max_length=7,
+        default='#FFFFFF',
+        help_text='Hex color code, e.g., #FFAA00',
+        validators=[RegexValidator(regex=r'^#[0-9A-Fa-f]{6}$')],
+    )
 
     def __str__(self):
         return self.title
@@ -35,6 +71,42 @@ class Photo(models.Model):
         storage, path = self.image.storage, self.image.path
         super().delete(*args, **kwargs)
         storage.delete(path)
+
+class SegmentedPhoto2(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    original_photo = models.ForeignKey(
+        Photo,
+        verbose_name='元の画像',
+        on_delete=models.SET_NULL,
+        null=True, 
+        blank=True, 
+        related_name='segmented_images2'
+    )
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='所有者')
+    segment_npy = models.FileField(upload_to=upload_to_npy_path, blank=True, null=True)
+    image = models.ImageField(verbose_name='切り抜き画像', upload_to=upload_to_segmented_path, blank=True, null=True)
+    created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
+
+    # Reflection parameters
+    roughness = models.FloatField(
+        verbose_name='roughness',
+        default=0.0,
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+    )
+
+    metalness = models.FloatField(
+        verbose_name='metalness',
+        default=0.0,
+        validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
+    )
+
+    albedo = models.CharField(
+        verbose_name='アルベド',
+        max_length=7,
+        default='#FFFFFF',
+        help_text='Hex color code, e.g., #FFAA00',
+        validators=[RegexValidator(regex=r'^#[0-9A-Fa-f]{6}$')],
+    )
 
 class SegmentedPhoto(models.Model):
 
@@ -55,19 +127,22 @@ class SegmentedPhoto(models.Model):
         on_delete=models.CASCADE,
     )
 
-    image = models.ImageField(verbose_name='切り抜き画像', upload_to=upload_to_uuid_path)
+    image = models.ImageField(verbose_name='切り抜き画像', upload_to=upload_to_segmented_path)
     created_at = models.DateTimeField(verbose_name='作成日時', auto_now_add=True)
+    
     # Reflection parameters
-    diffuse_reflectance = models.FloatField(
-        verbose_name='拡散反射率',
+    roughness = models.FloatField(
+        verbose_name='roughness',
         default=0.0,
         validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
     )
-    specular_reflectance = models.FloatField(
-        verbose_name='鏡面反射率',
+
+    metalness = models.FloatField(
+        verbose_name='metalness',
         default=0.0,
         validators=[MinValueValidator(0.0), MaxValueValidator(1.0)],
     )
+
     albedo = models.CharField(
         verbose_name='アルベド',
         max_length=7,

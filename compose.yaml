@@ -18,6 +18,8 @@ services:
       - .env.docker
     environment:
       HF_HOME: /root/.cache/huggingface
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - redis
       - db

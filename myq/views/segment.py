@@ -1,27 +1,30 @@
-from django.contrib.auth.forms import UserCreationForm
-from django.urls import reverse_lazy
-from django.views import generic
-from django.views.generic import TemplateView, CreateView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
-from ..models import Photo, SegmentedPhoto
-from django.shortcuts import get_object_or_404
-from django.http import FileResponse, HttpResponseForbidden
-from django.contrib.auth.decorators import login_required
-import os
-import torch
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
-from PIL import Image, ImageOps
 import base64
-from ..apps import SAM2_PREDICTOR, SAM3_PROCESSOR
 import io
-import numpy as np
-from django.urls import reverse
-from django.core.files.base import ContentFile
-import uuid
-from ..forms import SimpleSignUpForm
 import json
+import os
+import uuid
+import zlib
+
+import numpy as np
+import torch
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
+from django.core.files.base import ContentFile
+from django.http import FileResponse, HttpResponseForbidden, JsonResponse
+from django.shortcuts import get_object_or_404
+from django.urls import reverse, reverse_lazy
+from django.views import generic
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.views.generic import CreateView, TemplateView
+from PIL import Image, ImageOps
+
+from ..apps import SAM2_PREDICTOR, SAM3_PROCESSOR
+from ..forms import SimpleSignUpForm
+from ..models import Photo, SegmentedPhoto
+from ..tasks import crop
 
 
 class PhotoSegment3View(LoginRequiredMixin, generic.DetailView):
@@ -158,6 +161,7 @@ def segment_image_api2(request):
         return JsonResponse({'error': 'Model not loaded'}, status=503)
 
     try:
+        session_id = str(uuid.uuid4())
         ppoints = json.loads(request.POST.get('ppoints'))
         npoints = json.loads(request.POST.get('npoints'))
         description = request.POST.get('description')
@@ -212,19 +216,36 @@ def segment_image_api2(request):
         img_str = base64.b64encode(buffered.getvalue()).decode()
         image64.append(img_str)
 
-        buffered2 = io.BytesIO()
-        image2 = crop_with_mask(image_pil,max_square_submatrix(masks))
-        image2.save(buffered2, format="PNG", optimize=True)
-        img_str2 = base64.b64encode(buffered2.getvalue()).decode()
+
+        packed = np.packbits(masks)
+
+        compressed = zlib.compress(
+            packed.tobytes()
+        )
+
+        encoded = base64.b64encode(
+            compressed
+        ).decode()
+
+        cache.set(
+            f"segment:{session_id}",
+            {
+                "mask": encoded,
+                "photo_id": original_photo.id,
+                "shape": masks.shape
+            },
+            timeout=60 * 10
+        )
         
         print(masks)
-        masks = masks.tolist()
-        return JsonResponse({'success': True, 'image_base64': image64, 'crop' : img_str2})
+        return JsonResponse({'success': True, 'image_base64': image64, 'session_id': session_id})
 
     except Exception as e:
         print(e)
         return JsonResponse({'error': str(e)}, status=500)
 
+import json
+import time
+
 from django.http import StreamingHttpResponse
 from django.views.decorators.http import require_POST
-import json, time
