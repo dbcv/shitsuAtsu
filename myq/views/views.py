@@ -93,7 +93,10 @@ def save_segmented_image(request):
 
         segmented_photo = SegmentedPhoto(
             original_photo=original_photo,
-            owner=original_photo.owner
+            owner=original_photo.owner,
+            roughness=original_photo.roughness,
+            metalness=original_photo.metalness,
+            albedo=original_photo.albedo
         )
         segmented_photo.save()
 

@@ -10,7 +10,8 @@ const scene = new THREE.Scene()
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000)
 
-camera.position.set(0, 1.5, 4)
+camera.position.set(7, -1.5, -4)
+camera.lookAt(0, 0, 0)
 
 const renderer = new THREE.WebGLRenderer({
     antialias: true
@@ -53,7 +54,8 @@ const controls = new OrbitControls(
 )
 
 controls.enableDamping = true
-controls.target.set(0, 1, 0)
+controls.target.set(0, -1.5, 0)
+controls.update()
 
 const loader = new GLTFLoader()
 
@@ -62,7 +64,7 @@ loader.setMeshoptDecoder(MeshoptDecoder)
 const dracoLoader = new DRACOLoader()
 
 dracoLoader.setDecoderPath(
-    "{% static 'js/draco@1.5.7/decorders/' %}"
+    "{% static 'vendor/draco@1.5.7/decorders/' %}"
 )
 
 loader.setDRACOLoader(dracoLoader)
@@ -75,13 +77,22 @@ loader.load(
             if (child.isMesh) {
                 child.castShadow = true
                 child.receiveShadow = true
-                if (child.material) {
-                    child.material.envMapIntensity = 1.0
-                    child.material.needsUpdate = true
+                const material = child.material
+                if (material) {
+                    console.log('parameters', imageAlbedo, imageRoughness, imageMetalness)
+                    material.color = new THREE.Color(imageAlbedo)
+                    material.roughness = parseFloat(imageRoughness)
+                    material.metalness = parseFloat(imageMetalness)
+                    material.envMapIntensity = 1.0
+                    material.needsUpdate = true
                 }
             }
         })
         scene.add(model)
+        const box = new THREE.Box3().setFromObject(model)
+        const center = box.getCenter(new THREE.Vector3())
+
+        model.position.sub(center)
     },
     undefined,
     (error) => {
