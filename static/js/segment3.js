@@ -221,7 +221,7 @@ function clientToUser(touch) {
 
 let sendSam2Timeout = null;
 
-function redraw(sendSam2 = true, start = false, end = false) {
+function redraw(sendSam2 = true, start = false, end = false, timerlimit = 2000) {
 
 
     if (sendSam2 && sendSam2Timeout) {
@@ -260,6 +260,7 @@ function redraw(sendSam2 = true, start = false, end = false) {
     } else if (end) {
         console.log("E")
         // 終了タイミングでの発火
+        timer.controlTimer(1, 360, 0.1);
         timer.controlTimer(2, 360, 0.3);
         timerComment.innerText = "完了";
         timerComment.setAttribute("data-fin",1);
@@ -325,6 +326,7 @@ function redraw(sendSam2 = true, start = false, end = false) {
 
             fetch("/api/segment2/", {
                 method: 'POST',
+                headers: {'X-CSRFToken': csrfToken},
                 body: formData,
                 signal: controller.signal,
             })
@@ -334,8 +336,6 @@ function redraw(sendSam2 = true, start = false, end = false) {
                     if (data.success) {
                         editSegmentedImageElement.src = `data:image/png;base64,${data.image_base64}`;
                         sessionId = data.session_id;
-                        //saveSegmentedImageElement.src = `data:image/png;base64,${data.crop}`;
-                        //lastResultBase64 = `data:image/png;base64,${data.crop}`;
                         loadOverlayImage(`data:image/png;base64,${data.image_base64}`);
                         controller = null;
                     } else {
@@ -348,7 +348,7 @@ function redraw(sendSam2 = true, start = false, end = false) {
                         console.error('Fetchエラー:', err);
                     }
                 });
-        }, 2000)
+        }, timerlimit)
     }
 }
 
@@ -458,9 +458,7 @@ saveButton.addEventListener('click', () => {
 
     fetch(api_save_segment_URL, {
         method: 'POST',
-        headers: {
-            'X-CSRFToken': csrfToken
-        },
+        headers: {'X-CSRFToken': csrfToken},
         body: formData
     })
         .then(response => response.json())
@@ -525,3 +523,4 @@ function loadOverlayImage(base64str) {
 }
 
 document.getElementById('p-pen').click();
+redraw(sendSam2 = true, start = false, end = true, timerlimit = 1);

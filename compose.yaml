@@ -25,6 +25,24 @@ services:
       - db
     gpus: all
     restart: unless-stopped
+  
+  sam3:
+    build: .
+    command: >
+      uv run uvicorn sam_server:app
+      --host 0.0.0.0
+      --port 8001
+      --reload
+    working_dir: /app/sam3_server
+    volumes:
+      - .:/app
+      - /app/.venv
+      - huggingface_cache:/root/.cache/huggingface
+    environment:
+      HF_HOME: /root/.cache/huggingface
+      PYTHONPATH: /app
+    gpus: all
+    restart: unless-stopped
 
   redis:
     image: redis:8.6

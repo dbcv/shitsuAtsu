@@ -27,9 +27,13 @@
 
     const modelURL = "{% static 'models/model.glb' %}"
     const hdriURL = "{% static 'hdri/lilienstein_1k.hdr' %}"
+    const roughness = "{{ object.original_photo.roughness }}"
+    const metalness = "{{ object.original_photo.metalness }}"
+    const albedo = "{{ object.original_photo.albedo }}"
+    
 </script>
 
-<script type="module" src="{% static 'js/reflectance.js' %}"></script>
+<script type="module" src="{% static_ts 'js/reflectance.js' %}"></script>
 
 {% endblock %}
 

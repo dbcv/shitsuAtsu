@@ -66,26 +66,41 @@ dracoLoader.setDecoderPath(
 )
 
 loader.setDRACOLoader(dracoLoader)
-
+alert(roughness+','+metalness+','+albedo)
 loader.load(
     modelURL,
     (gltf) => {
         const model = gltf.scene
+
         model.traverse((child) => {
             if (child.isMesh) {
                 child.castShadow = true
                 child.receiveShadow = true
-                if (child.material) {
-                    child.material.envMapIntensity = 1.0
-                    child.material.needsUpdate = true
+
+                const material = child.material
+
+                if (material) {
+                    // PBRマテリアルのみ
+                    if ('roughness' in material) {
+                        material.roughness = roughness
+                    }
+
+                    if ('metalness' in material) {
+                        material.metalness = metalness
+                    }
+
+                    // Albedo(ベースカラー)
+                    if ('color' in material) {
+                        material.color.set(albedo)
+                    }
+
+                    material.envMapIntensity = 1.0
+                    material.needsUpdate = true
                 }
             }
         })
+
         scene.add(model)
-    },
-    undefined,
-    (error) => {
-        console.error(error)
     }
 )
 
