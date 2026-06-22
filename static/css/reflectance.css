@@ -6,9 +6,57 @@ html, body {
 
 #three-container {
     width: 100vw;
-    height: 100vh;
+    height: calc(100vh - 250px);
+    overflow: hidden;
 }
 
 canvas {
     display: block;
+}
+
+
+#parameter-panel {
+    height: 250px;
+    background-color: black;
+    padding: 5px;
+}
+
+
+#circle {
+
+    border-radius: 50%;
+    cursor: crosshair;
+    touch-action: none;
+}
+
+#preview {
+    width: 100px;
+    height: 30px;
+    border: 2px solid black;
+    margin-left: 20px;
+}
+
+#color-picker {
+    width: 80vw;
+    height: 80vw;
+    container-type: inline-size;
+    container-name: color-picker;
+    background-color: #ffffff99;
+    left: 50%;
+    top: 80%;
+    transform: translate(-50%, -50%);
+    padding-bottom: 50px;
+}
+
+#L-slider{
+    width: stretch;
+    margin-top: 15px;
+}
+
+@container color-picker (width > 0px) {
+    #circle {
+        width: 100cqw;
+        height: 100cqw;
+        display: flex;
+    }
 }

@@ -10,7 +10,7 @@ const scene = new THREE.Scene()
 
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000)
 
-camera.position.set(0, 1.5, 4)
+camera.position.set(0, -3, 10)
 
 const renderer = new THREE.WebGLRenderer({
     antialias: true
@@ -53,7 +53,7 @@ const controls = new OrbitControls(
 )
 
 controls.enableDamping = true
-controls.target.set(0, 1, 0)
+controls.target.set(0, -2, 0)
 
 const loader = new GLTFLoader()
 
@@ -64,6 +64,8 @@ const dracoLoader = new DRACOLoader()
 dracoLoader.setDecoderPath(
     "{% static 'js/draco@1.5.7/decorders/' %}"
 )
+window.modelMaterials = []
+
 
 loader.setDRACOLoader(dracoLoader)
 alert(roughness+','+metalness+','+albedo)
@@ -80,26 +82,20 @@ loader.load(
                 const material = child.material
 
                 if (material) {
-                    // PBRマテリアルのみ
-                    if ('roughness' in material) {
-                        material.roughness = roughness
-                    }
+                    if ('roughness' in material) {material.roughness = roughness}
 
-                    if ('metalness' in material) {
-                        material.metalness = metalness
-                    }
+                    if ('metalness' in material) {material.metalness = metalness}
 
-                    // Albedo(ベースカラー)
-                    if ('color' in material) {
-                        material.color.set(albedo)
-                    }
+                    if ('color' in material) {material.color.set(albedo)}
 
                     material.envMapIntensity = 1.0
                     material.needsUpdate = true
                 }
+                window.modelMaterials.push(material)
             }
         })
 
+        
         scene.add(model)
     }
 )

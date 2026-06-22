@@ -2,27 +2,30 @@ import base64
 import io
 import json
 import os
+import time
 import uuid
 import zlib
 
 import numpy as np
 import requests
 import torch
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
 from django.core.files.base import ContentFile
-from django.http import FileResponse, HttpResponseForbidden, JsonResponse
+from django.http import FileResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, TemplateView
+from ollama import Client
 from PIL import Image, ImageOps
+from pydantic import BaseModel, Field
 
-from ..forms import SimpleSignUpForm
 from ..models import Photo, SegmentedPhoto
 from ..tasks import crop
 
@@ -57,7 +60,7 @@ def segment_image_api2(request):
             image64, masks, shape = segment_with_text_requests(original_photo.image.path, description)
         else:
             print(f"Received segmentation request: {len(ppoints) + len(npoints)} points, description: {description}, photo_uuid: {photo_uuid}")
-            image64, masks, shape = segment_with_points(image_pil, ppoints, npoints)
+            image64, masks, shape = segment_with_points(original_photo.image.path, ppoints, npoints)
 
         packed = np.packbits(masks)
         compressed = zlib.compress(packed.tobytes())
@@ -79,12 +82,14 @@ def segment_image_api2(request):
         return JsonResponse({'error': str(e)}, status=500)
     
 def segment_with_text_requests(image_path, description):
+    description_en = translate_description(description)
+    print(f"Translated description: {description_en.description}")
 
     response = requests.post(
         f"{SAM3_URL}/segment_text",
         data={
             "image_path": image_path,
-            "description": description
+            "description": description_en.description
         }
     )
 
@@ -94,22 +99,62 @@ def segment_with_text_requests(image_path, description):
     else:
         raise Exception(f"API error: {response.status_code} {response.text}")
 
-def segment_with_points(image_pil, ppoints, npoints):
-    input_point = []
-    input_label = []
-    for p in ppoints:
-        input_point.append([p["x"],p["y"]])
-        input_label.append(1)
-    for p in npoints:
-        input_point.append([p["x"],p["y"]])
-        input_label.append(0)
-    
-    input_point = np.array(input_point)
-    input_label = np.array(input_label)
-    return
+def segment_with_points(image_path, ppoints, npoints):
+    response = requests.post(
+        f"{SAM3_URL}/segment_points",
+        data={
+            "image_path": image_path,
+            "ppoints": json.dumps(ppoints),
+            "npoints": json.dumps(npoints)
+        }
+    )
 
-import json
-import time
+    if response.status_code == 200:
+        data = response.json()
+        return data["image64"], data["masks"], data["shape"]
+    else:
+        raise Exception(f"API error: {response.status_code} {response.text}")
 
-from django.http import StreamingHttpResponse
-from django.views.decorators.http import require_POST
+def translate_description(description):
+    class TranslationModel(BaseModel):
+        description: str
+
+    SYSTEM_PROMPT = """
+You are an assistant that converts descriptions into concise visual recognition phrases for CLIP-style image retrieval systems.
+in English.
+Rules:
+
+* Generate a single English phrase describing the main visual subject.
+* Preserve relationships between objects, actions, and context.
+* Do not output separate tags.
+* Do not use commas or lists.
+* Focus on what would be visible in an image.
+* Output only the phrase.
+
+Example:
+
+Input:
+雨の日に傘を差した女性が駅前を歩いている
+
+Output:
+woman walking with an umbrella in front of a train station on a rainy day
+
+## translate into English
+"""    
+    client = Client(settings.OLLAMA_HOST)
+    response = client.chat(
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": description + "\n\nConvert descriptions into concise visual recognition phrases for CLIP-style image retrieval systems, and do not include any instructions or role-playing directives. Translate into English. /no_think"}
+        ],
+        model=settings.OLLAMA_MODEL,
+        format=TranslationModel.model_json_schema(),
+        think=False,
+    )
+
+    try:
+        entry = TranslationModel.model_validate_json(response.message.content)
+        return entry
+    except Exception as e:
+        print(f"Error occurred while validating JSON: {e}")
+        raise

@@ -2,20 +2,26 @@
 
 import base64
 import io
+import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 import numpy as np
+import requests
 import torch
+from accelerate import Accelerator
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 from PIL import Image, ImageOps
+from transformers import Sam3TrackerModel, Sam3TrackerProcessor
 
 from config import settings
 from sam3.model.sam3_image_processor import Sam3Processor
 from sam3.model_builder import build_sam3_image_model
 
 SAM3_PROCESSOR = None
+SAM3_TRACKER_MODEL = None
+SAM3_TRACKER_PROCESSOR = None
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 def apply_mask_to_cutout(original_image, mask):
@@ -137,15 +143,12 @@ def convert_to_optimized_bw(image: Image.Image) -> Image.Image:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global SAM3_PROCESSOR
+    global SAM3_TRACKER_MODEL
+    global SAM3_TRACKER_PROCESSOR
 
     print("--- Loading SAM3 Model ---")
 
-    if torch.cuda.is_available():
-        device = "cuda"
-    elif torch.backends.mps.is_available():
-        device = "mps"
-    else:
-        device = "cpu"
+    device = Accelerator().device
 
     print(f"Using device: {device}")
 
@@ -162,6 +165,8 @@ async def lifespan(app: FastAPI):
     )
 
     SAM3_PROCESSOR = Sam3Processor(sam3_model)
+    SAM3_TRACKER_MODEL = Sam3TrackerModel.from_pretrained("facebook/sam3").to(device)
+    SAM3_TRACKER_PROCESSOR = Sam3TrackerProcessor.from_pretrained("facebook/sam3")
 
     print("--- SAM3 Model Loaded Successfully ---")
 
@@ -224,8 +229,6 @@ def segment_with_text(image_pil, description):
 
     masks = mask_np.astype(np.uint8)
 
-    
-
     buffered = io.BytesIO()
     image = apply_mask_to_cutout(image_pil, masks)
     print("Pattern2 masks shape:", masks.shape, "dtype:", masks.dtype)
@@ -237,6 +240,91 @@ def segment_with_text(image_pil, description):
 
     return image64, masks, shape
 
+@app.post("/segment_points")
+async def segment_points(
+    image_path: str = Form(...),
+    ppoints: str = Form(...),
+    npoints: str = Form(...)
+    ):
+    try:
+        image_pil = Image.open(image_path)
+        image_pil = ImageOps.exif_transpose(image_pil).convert("RGB")
+
+        ppoints = json.loads(ppoints)
+        npoints = json.loads(npoints)
+
+        image64, masks, shape = segment_with_points(image_pil, ppoints, npoints)
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                "success": True,
+                "image64": image64,
+                "masks": masks.tolist(),
+                "shape": shape
+            }
+        )
+
+    except Exception as e:
+        print(e)
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "error": str(e)
+            }
+        )
+
+def segment_with_points(image_pil, ppoints, npoints):
+    input_point = []
+    input_label = []
+    for p in ppoints:
+        input_point.append([p["x"],p["y"]])
+        input_label.append(1)
+    for p in npoints:
+        input_point.append([p["x"],p["y"]])
+        input_label.append(0)
+    
+    input_point = np.array([[input_point]])
+    input_label = np.array([[input_label]])
+
+    inputs = SAM3_TRACKER_PROCESSOR(
+        image_pil,
+        input_points=input_point,
+        input_labels=input_label,
+        return_tensors="pt"
+    ).to(SAM3_TRACKER_MODEL.device)
+
+    with torch.no_grad():
+        outputs = SAM3_TRACKER_MODEL(**inputs, multimask_output=False)
+    
+    image64 = []
+
+    masks = SAM3_TRACKER_PROCESSOR.post_process_masks(outputs.pred_masks.cpu(), inputs["original_sizes"])[0]
+
+
+    
+    m = masks
+    print(m)
+    print("type(output['masks']):", type(m))
+
+    if hasattr(m, "shape"):
+        print("output['masks'].shape:", m.shape, "dtype:", getattr(m, "dtype", None))
+
+    mask_np = masks[0].squeeze().detach().cpu().numpy()
+
+    masks = mask_np.astype(np.uint8)
+
+    buffered = io.BytesIO()
+    image = apply_mask_to_cutout(image_pil, masks)
+    print("Pattern2 masks shape:", masks.shape, "dtype:", masks.dtype)
+    shape = masks.shape
+    image = convert_to_optimized_bw(image)
+    image.save(buffered, format="PNG", optimize=True)
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    image64.append(img_str)
+
+    return image64, masks, shape
 
 @app.get("/")
 async def root():

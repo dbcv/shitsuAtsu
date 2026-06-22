@@ -27,11 +27,6 @@ main {
             border-radius: 0.5rem;
             background-color: #ffffff;
         }
-
-        &>button.edit-return {}
-
-        &>button.edit-save {}
-
     }
 
     &>#edit-area {
@@ -69,8 +64,6 @@ main {
             border-radius: 0.5rem;
             background-color: #ffffff;
         }
-
-        &>button.edit-next {}
     }
 
     &>#edit-popover {
@@ -114,8 +107,6 @@ main {
                 background-color: #ffffff;
                 max-height: 5rem;
             }
-
-            &>#save-button {}
         }
     }
 
