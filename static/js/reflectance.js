@@ -68,7 +68,7 @@ window.modelMaterials = []
 
 
 loader.setDRACOLoader(dracoLoader)
-alert(roughness+','+metalness+','+albedo)
+// alert(roughness+','+metalness+','+albedo)
 loader.load(
     modelURL,
     (gltf) => {
