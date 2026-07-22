@@ -43,19 +43,18 @@
 
 <div id="three-container"></div>
 <div id="parameter-panel">
-    <h2>Parameters</h2>
     <div class="parameter">
-        <label for="roughness">Roughness:</label>
+        <label for="roughness">粗さ:</label>
         <input type="range" id="roughness" name="roughness" min="0" max="1" step="0.01" value="{{ object.original_photo.roughness }}">
     </div>
     <div class="parameter">
-        <label for="metalness">Metalness:</label>
+        <label for="metalness">金属度:</label>
         <input type="range" id="metalness" name="metalness" min="0" max="1" step="0.01" value="{{ object.original_photo.metalness }}">
     </div>
     <div class="parameter">
-        <label for="albedo">Color:</label>
+        <label for="albedo">色:</label>
         <input type="color" id="albedo" name="albedo" value="{{ object.original_photo.albedo }}" hidden>
-        <button id="preview" command="show-modal" commandfor="color-picker">Select Color</button>
+        <button id="preview" command="show-modal" commandfor="color-picker"><span>Select Color</span></button>
     </div>
 </div>
 <dialog id="color-picker" closedby="any">

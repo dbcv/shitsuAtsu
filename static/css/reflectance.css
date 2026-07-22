@@ -6,8 +6,8 @@ html, body {
 
 #three-container {
     width: 100vw;
-    height: calc(100vh - 250px);
     overflow: hidden;
+    height: 33vh;
 }
 
 canvas {
@@ -16,24 +16,52 @@ canvas {
 
 
 #parameter-panel {
-    height: 250px;
     background-color: black;
-    padding: 5px;
+    padding: 10px 20px;
+    margin: 10px 20px;
 }
 
 
 #circle {
-
     border-radius: 50%;
     cursor: crosshair;
     touch-action: none;
 }
 
 #preview {
-    width: 100px;
     height: 30px;
     border: 2px solid black;
-    margin-left: 20px;
+    margin: auto;
+}
+
+#parameter-panel {
+    background: rgba(17, 17, 17, 0.9);
+    color: white;
+    border-radius: 2px;
+}
+
+.parameter {
+    display: grid;
+    align-items: center;
+    margin: 12px 0;
+    grid-template-columns: 1fr 2fr;
+}
+
+.parameter label {
+    width: 90px;
+}
+
+.parameter input[type="range"] {
+    flex: 1;
+}
+
+#preview {
+    width: 90%;
+    height: 34px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: white;
 }
 
 #color-picker {
@@ -43,7 +71,7 @@ canvas {
     container-name: color-picker;
     background-color: #ffffff99;
     left: 50%;
-    top: 80%;
+    top: 60%;
     transform: translate(-50%, -50%);
     padding-bottom: 50px;
 }
@@ -59,4 +87,40 @@ canvas {
         height: 100cqw;
         display: flex;
     }
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none; 
+    height: 1rem;
+    cursor: pointer;
+    overflow: hidden;
+    border-radius: 1rem;
+    border: 4px solid black;
+    background: black;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+    height: 1rem;
+    background: rgb(87, 87, 87);
+    border-radius: 1rem;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none; 
+    height: 1rem;
+    width: 1rem;
+    background-color: white;
+    border-radius: 50%;
+    border: 1px solid hsl(0, 0%, 52%);
+  /*Colors*/
+    box-shadow: -50rem 0 5rem 20rem hsl(0, 0%, 100%),
+                -40rem 0 5rem 30rem hsl(0, 0%, 47%),
+                -30rem 0 2rem 25rem hsl(0, 0%, 78%),
+                -25.5rem 0 0 25rem  hsl(0, 0%, 100%);
+}
+
+button#preview>span{
+    filter: invert(100%) grayscale(100%) contrast(100);
 }
