@@ -44,6 +44,23 @@ services:
     gpus: all
     restart: unless-stopped
 
+  celery:
+    build: .
+    command: uv run task celery
+    volumes:
+      - .:/app
+      - /app/.venv
+      - huggingface_cache:/root/.cache/huggingface
+    working_dir: /app
+    env_file:
+      - .env.docker
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
+      - db
+    restart: unless-stopped
+
   redis:
     image: redis:8.6
     ports:

@@ -1,14 +1,14 @@
-from django.apps import AppConfig
 import torch
+from django.apps import AppConfig
 
 SAM2_PREDICTOR = None
 
+
 class MyqConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'myq'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "myq"
 
     def ready(self):
-        import myq.signals
 
         print("--- Loading SAM2 Model ---")
         global SAM2_PREDICTOR
@@ -34,4 +34,3 @@ class MyqConfig(AppConfig):
                 print("--- SAM2 Model Loaded Successfully ---")
             except Exception as e:
                 print(f"!!! FAILED to load SAM2 Model: {e}")
-

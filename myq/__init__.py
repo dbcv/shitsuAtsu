@@ -1,1 +1,1 @@
-default_app_config = 'myq.apps.MyqConfig'
+default_app_config = "myq.apps.MyqConfig"

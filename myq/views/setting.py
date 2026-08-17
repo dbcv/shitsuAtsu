@@ -1,7 +1,6 @@
 from django.contrib import messages
-from django.contrib.auth import login, update_session_auth_hash
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import PasswordChangeForm
 from django.shortcuts import redirect, render
 
 from ..forms import ProfileForm, SimplePasswordChangeForm
@@ -14,38 +13,43 @@ def setting_view(request):
     profile = profile[0]
     print(request.user.profile)
     print(profile)
-    if request.method == 'POST':
+    if request.method == "POST":
         profile_form = ProfileForm(request.POST, instance=profile)
-        password_form = SimplePasswordChangeForm(request.POST)
+        password_form = SimplePasswordChangeForm(request.POST, instance=request.user)
         print("AAA")
         print(password_form.is_valid())
-        if 'update_profile' in request.POST and profile_form.is_valid():
+        if "update_profile" in request.POST and profile_form.is_valid():
             profile_form.save()
-            messages.success(request, 'プロフィールを更新しました。')
-            return redirect('setting')
-        elif 'change_password' in request.POST and password_form.is_valid():
+            messages.success(request, "プロフィールを更新しました。")
+            return redirect("setting")
+        elif "change_password" in request.POST and password_form.is_valid():
             print("BBB")
-            password_form.save(request.user)
+            password_form.save()
             update_session_auth_hash(request, request.user)
-            messages.success(request, 'パスワードを変更しました。')
-            return redirect('setting')
+            messages.success(request, "パスワードを変更しました。")
+            return redirect("setting")
     else:
         profile_form = ProfileForm(instance=profile)
-        password_form = SimplePasswordChangeForm()
+        password_form = SimplePasswordChangeForm(instance=request.user)
 
-    return render(request, 'myq/setting.html', {
-        'profile_form': profile_form,
-        'password_form': password_form,
-    })
+    return render(
+        request,
+        "myq/setting.html",
+        {
+            "profile_form": profile_form,
+            "password_form": password_form,
+        },
+    )
+
 
 @login_required
 def change_password(request):
-    if request.method == 'POST':
-        form = SimplePasswordChangeForm(request.POST)
+    if request.method == "POST":
+        form = SimplePasswordChangeForm(request.POST, instance=request.user)
         if form.is_valid():
-            form.save(request.user)
-            return redirect('password_change_done')  # 任意の遷移先
+            form.save()
+            return redirect("password_change_done")  # 任意の遷移先
     else:
-        form = SimplePasswordChangeForm()
+        form = SimplePasswordChangeForm(instance=request.user)
 
-    return render(request, 'change_password.html', {'form': form})
+    return render(request, "change_password.html", {"form": form})
