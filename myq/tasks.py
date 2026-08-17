@@ -108,7 +108,7 @@ def analyze_material(photo_id):
     print(f"Photo ID: {photo_id}, Entry: {entry}")
     photo.roughness = entry.roughness
     photo.metalness = entry.metallic
-    photo.albedo = "#%02x%02x%02x" % tuple(entry.base_color)
+    photo.albedo = "#{:02x}{:02x}{:02x}".format(*entry.base_color)
     photo.save()
 
 

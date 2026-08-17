@@ -1,11 +1,14 @@
 import io
+import logging
 
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from ..models import Photo, SegmentedPhoto
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -37,8 +40,8 @@ def serve_photo2(request, uuid, width=0, ext="png"):
 
     except FileNotFoundError:
         raise Http404("Image file not found.")
-    except Exception as e:
-        print(f"Error processing image: {e}")
+    except (UnidentifiedImageError, OSError, ValueError) as e:
+        logger.error("Error processing image: %s", e)
         return HttpResponse(status=500)
 
 
@@ -72,6 +75,7 @@ def serve_segmented_photo2(request, uuid, width=0, ext="png"):
 
     except FileNotFoundError:
         raise Http404("Image file not found.")
-    except Exception as e:
-        print(f"Error processing image: {e}")
+    except (UnidentifiedImageError, OSError, ValueError) as e:
+        logger.error("Error processing image: %s", e)
         return HttpResponse(status=500)
+

@@ -1,13 +1,18 @@
 import json
+import logging
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ValidationError
+from django.db import DatabaseError
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views import generic
 from django.views.decorators.http import require_POST
 
 from ..models import SegmentedPhoto
+
+logger = logging.getLogger(__name__)
 
 
 class ThreeView(LoginRequiredMixin, generic.DetailView):
@@ -26,8 +31,12 @@ def register_reflectance(request):
     try:
         data = json.loads(request.body)
         photo_uuid = data["photo_uuid"]
+    except (json.JSONDecodeError, KeyError, TypeError) as e:
+        return JsonResponse({"status": "error", "message": f"Invalid request data: {e}"}, status=400)
 
-        photo = get_object_or_404(SegmentedPhoto, uuid=photo_uuid, owner=request.user)
+    photo = get_object_or_404(SegmentedPhoto, uuid=photo_uuid, owner=request.user)
+
+    try:
         photo.roughness = data.get("roughness")
         photo.metalness = data.get("metalness")
         photo.albedo = data.get("albedo")
@@ -39,5 +48,7 @@ def register_reflectance(request):
                 "message": "Reflectance data registered successfully.",
             }
         )
-    except Exception as e:
+    except (ValidationError, DatabaseError, ValueError) as e:
+        logger.error("Failed to save reflectance data: %s", e)
         return JsonResponse({"status": "error", "message": str(e)}, status=400)
+

@@ -231,7 +231,7 @@ class AccessLog(models.Model):
     class Meta:
         verbose_name = "アクセスログ"
         verbose_name_plural = "アクセスログ一覧"
-        ordering = ["-timestamp"]
+        ordering = ("-timestamp",)
 
     def __str__(self):
         user = self.user.username if self.user else "匿名"
@@ -240,11 +240,11 @@ class AccessLog(models.Model):
 
 class Profile(models.Model):
     objects = models.Manager()
-    GENDER_CHOICES = [
+    GENDER_CHOICES = (
         ("M", "男性"),
         ("F", "女性"),
         ("O", "その他"),
-    ]
+    )
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     age = models.PositiveIntegerField(null=True, blank=True)

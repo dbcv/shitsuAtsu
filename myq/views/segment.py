@@ -1,5 +1,6 @@
 import base64
 import json
+import logging
 import uuid
 import zlib
 
@@ -15,10 +16,12 @@ from django.views import generic
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from ollama import Client
-from PIL import Image, ImageOps
-from pydantic import BaseModel
+from PIL import UnidentifiedImageError
+from pydantic import BaseModel, ValidationError
 
 from ..models import Photo
+
+logger = logging.getLogger(__name__)
 
 SAM3_URL = "http://sam3:8001"
 
@@ -39,15 +42,22 @@ class PhotoSegment3View(LoginRequiredMixin, generic.DetailView):
 def segment_image_api2(request):
     try:
         session_id = str(uuid.uuid4())
-        ppoints = json.loads(request.POST.get("ppoints"))
-        npoints = json.loads(request.POST.get("npoints"))
-        description = request.POST.get("description")
+        ppoints_raw = request.POST.get("ppoints", "[]")
+        npoints_raw = request.POST.get("npoints", "[]")
+        description = request.POST.get("description", "")
         photo_uuid = request.POST.get("photo_uuid")
 
-        original_photo = get_object_or_404(Photo, uuid=photo_uuid, owner=request.user)
-        image_pil_raw = Image.open(original_photo.image.path)
-        image_pil = ImageOps.exif_transpose(image_pil_raw).convert("RGB")
+        if not photo_uuid:
+            return JsonResponse({"error": "photo_uuid is required"}, status=400)
 
+        ppoints = json.loads(ppoints_raw) if ppoints_raw else []
+        npoints = json.loads(npoints_raw) if npoints_raw else []
+    except (json.JSONDecodeError, TypeError) as e:
+        return JsonResponse({"error": f"Invalid JSON in points: {e}"}, status=400)
+
+    original_photo = get_object_or_404(Photo, uuid=photo_uuid, owner=request.user)
+
+    try:
         if len(ppoints) + len(npoints) == 0:
             print(
                 f"Received segmentation request with no points, description: {description}, photo_uuid: {photo_uuid}"
@@ -76,8 +86,14 @@ def segment_image_api2(request):
             {"success": True, "image_base64": image64, "session_id": session_id}
         )
 
-    except Exception as e:
-        print(e)
+    except (
+        UnidentifiedImageError,
+        OSError,
+        ValueError,
+        requests.RequestException,
+        RuntimeError,
+    ) as e:
+        logger.error("Error during image segmentation: %s", e)
         return JsonResponse({"error": str(e)}, status=500)
 
 
@@ -94,7 +110,7 @@ def segment_with_text_requests(image_path, description):
         data = response.json()
         return data["image64"], data["masks"], data["shape"]
     else:
-        raise Exception(f"API error: {response.status_code} {response.text}")
+        raise RuntimeError(f"API error: {response.status_code} {response.text}")
 
 
 def segment_with_points(image_path, ppoints, npoints):
@@ -111,7 +127,7 @@ def segment_with_points(image_path, ppoints, npoints):
         data = response.json()
         return data["image64"], data["masks"], data["shape"]
     else:
-        raise Exception(f"API error: {response.status_code} {response.text}")
+        raise RuntimeError(f"API error: {response.status_code} {response.text}")
 
 
 def translate_description(description):
@@ -162,6 +178,6 @@ woman walking with an umbrella in front of a train station on a rainy day
     try:
         entry = TranslationModel.model_validate_json(response.message.content)
         return entry
-    except Exception as e:
-        print(f"Error occurred while validating JSON: {e}")
+    except (ValidationError, json.JSONDecodeError) as e:
+        logger.error("Error occurred while validating JSON: %s", e)
         raise

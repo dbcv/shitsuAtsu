@@ -12,7 +12,7 @@ import torch
 from accelerate import Accelerator
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import JSONResponse
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, UnidentifiedImageError
 from transformers import Sam3TrackerModel, Sam3TrackerProcessor
 
 from config import settings
@@ -136,7 +136,7 @@ def convert_to_optimized_bw(image: Image.Image) -> Image.Image:
     except FileNotFoundError:
         print(f"エラー: 入力ファイルが見つかりません")
         return image
-    except Exception as e:
+    except (OSError, ValueError) as e:
         print(f"エラーが発生しました: {e}")
         return image
 
@@ -199,7 +199,7 @@ async def segment_text(
             }
         )
 
-    except Exception as e:
+    except (UnidentifiedImageError, OSError, ValueError, RuntimeError) as e:
         print(e)
         return JSONResponse(
             status_code=500,
@@ -265,7 +265,7 @@ async def segment_points(
             }
         )
 
-    except Exception as e:
+    except (UnidentifiedImageError, OSError, ValueError, KeyError, json.JSONDecodeError, RuntimeError) as e:
         print(e)
         return JSONResponse(
             status_code=500,
@@ -274,6 +274,7 @@ async def segment_points(
                 "error": str(e)
             }
         )
+
 
 def segment_with_points(image_pil, ppoints, npoints):
     input_point = []

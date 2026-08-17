@@ -53,7 +53,7 @@ class SimpleSignUpForm(forms.ModelForm):
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ["age", "gender"]
+        fields = ("age", "gender")
 
 
 import re

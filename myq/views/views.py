@@ -1,10 +1,12 @@
 # myq/views.py
-import os
+import logging
 
+from celery.exceptions import CeleryError
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.cache import cache
-from django.db import transaction
+from django.core.exceptions import ValidationError
+from django.db import DatabaseError, transaction
 from django.http import FileResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -15,6 +17,8 @@ from django.views.generic import TemplateView
 from ..forms import SimpleSignUpForm
 from ..models import Photo, SegmentedPhoto
 from ..tasks import analyze_material, crop
+
+logger = logging.getLogger(__name__)
 
 
 class SignUpView(generic.CreateView):
@@ -35,7 +39,6 @@ class PhotoUploadView(LoginRequiredMixin, TemplateView):
 
         try:
             original_name = file.name
-            file_title = os.path.splitext(original_name)[0]
 
             photo = Photo(
                 image=file,
@@ -51,7 +54,8 @@ class PhotoUploadView(LoginRequiredMixin, TemplateView):
 
             return JsonResponse({"success": True, "segment_url": segment_url})
 
-        except Exception as e:
+        except (ValidationError, DatabaseError, CeleryError, OSError) as e:
+            logger.error("Failed to upload and save photo: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
 
 
@@ -68,22 +72,20 @@ class PhotoSegmentView(LoginRequiredMixin, generic.DetailView):
 @require_POST
 @login_required
 def save_segmented_image(request):
+    photo_uuid = request.POST.get("photo_uuid")
+    session_id = request.POST.get("session_id")
+
+    if not photo_uuid or not session_id:
+        return JsonResponse({"error": "必要なデータが不足しています。"}, status=400)
+
+    original_photo = get_object_or_404(Photo, uuid=photo_uuid, owner=request.user)
+
+    # セッションIDからマスクデータを取得
+    cached_data = cache.get(f"segment:{session_id}")
+    if not cached_data:
+        return JsonResponse({"error": "セッションデータが見つかりません。"}, status=400)
+
     try:
-        photo_uuid = request.POST.get("photo_uuid")
-        session_id = request.POST.get("session_id")
-
-        if not photo_uuid or not session_id:
-            return JsonResponse({"error": "必要なデータが不足しています。"}, status=400)
-
-        original_photo = get_object_or_404(Photo, uuid=photo_uuid, owner=request.user)
-
-        # セッションIDからマスクデータを取得
-        cached_data = cache.get(f"segment:{session_id}")
-        if not cached_data:
-            return JsonResponse(
-                {"error": "セッションデータが見つかりません。"}, status=400
-            )
-
         segmented_photo = SegmentedPhoto(
             original_photo=original_photo, owner=original_photo.owner
         )
@@ -103,7 +105,8 @@ def save_segmented_image(request):
             }
         )
 
-    except Exception as e:
+    except (ValidationError, DatabaseError, CeleryError, OSError) as e:
+        logger.error("Failed to save segmented image: %s", e)
         return JsonResponse({"error": str(e)}, status=500)
 
 
@@ -117,28 +120,27 @@ def serve_segmented_photo(request, uuid):
 @require_POST
 @login_required
 def delete_image_api(request):
+    image_uuid = request.POST.get("uuid")
+    image_type = request.POST.get("type")
+
+    if not image_uuid or not image_type:
+        return JsonResponse({"error": "不正なリクエストです。"}, status=400)
+
+    if image_type == "original":
+        model = Photo
+        lookup = {"uuid": image_uuid, "owner": request.user}
+    elif image_type == "segmented":
+        model = SegmentedPhoto
+        lookup = {"uuid": image_uuid, "owner": request.user}
+    else:
+        return JsonResponse({"error": "未知の画像タイプです。"}, status=400)
+
+    image_to_delete = get_object_or_404(model, **lookup)
 
     try:
-        image_uuid = request.POST.get("uuid")
-        image_type = request.POST.get("type")
-
-        if not image_uuid or not image_type:
-            return JsonResponse({"error": "不正なリクエストです。"}, status=400)
-
-        if image_type == "original":
-            model = Photo
-            lookup = {"uuid": image_uuid, "owner": request.user}
-        elif image_type == "segmented":
-            model = SegmentedPhoto
-            lookup = {"uuid": image_uuid, "owner": request.user}
-        else:
-            return JsonResponse({"error": "未知の画像タイプです。"}, status=400)
-
-        image_to_delete = get_object_or_404(model, **lookup)
-
         image_to_delete.delete()
-
         return JsonResponse({"success": True, "message": "画像を削除しました。"})
 
-    except Exception as e:
+    except (DatabaseError, OSError) as e:
+        logger.error("Failed to delete image: %s", e)
         return JsonResponse({"error": str(e)}, status=500)
