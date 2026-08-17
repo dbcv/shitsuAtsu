@@ -30,6 +30,8 @@
     const roughness = "{{ object.original_photo.roughness }}"
     const metalness = "{{ object.original_photo.metalness }}"
     const albedo = "{{ object.original_photo.albedo }}"
+    const api_save_reflectance_URL = "{% url 'register_reflectance' %}"
+    const gallery3URL = "{% url 'photo_gallery3' %}"
     
 </script>
 
@@ -40,7 +42,7 @@
 
 
 {% block content %}
-
+<div id="gray-wall">初期化中...お待ちください。</div>
 <div id="three-container"></div>
 <div id="parameter-panel">
     <div class="parameter">
@@ -54,13 +56,26 @@
     <div class="parameter">
         <label for="albedo">色:</label>
         <input type="color" id="albedo" name="albedo" value="{{ object.original_photo.albedo }}" hidden>
-        <button id="preview" command="show-modal" commandfor="color-picker"><span>Select Color</span></button>
+        <button id="preview" command="show-modal" commandfor="color-picker"><span>色を選択</span></button>
     </div>
 </div>
 <dialog id="color-picker" closedby="any">
     <div id="circle"></div>
     <input type="range" id="L-slider" min="0" max="100" value="70">
 </dialog>
+
+<div></div>
+<dialog id="howtouse" closedby="any">
+    <h2>＜操作方法＞</h2>
+    <ul>
+        <li>スライダーを操作して粗さ・金属度を調整できます。</li>
+        <li>「色を選択」ボタンをクリックして、色を変更できます。</li>
+    </ul>
+</dialog>
+<div id="button-container">
+<button id="howtouse-button" command="show-modal" commandfor="howtouse">操作方法</button><button id="save-button" class="elm-hide">確定して終了</button>
+</div>
+<input type="hidden" id="csrf-token-input" value="{{ csrf_token }}">
 
 
 {% endblock %}

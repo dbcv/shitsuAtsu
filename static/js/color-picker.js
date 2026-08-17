@@ -1,9 +1,5 @@
 const size = 400;
 
-//========================================
-// Canvas
-//========================================
-
 const circle = document.getElementById("circle");
 circle.style.position = "relative";
 
@@ -26,10 +22,6 @@ circle.appendChild(markerCanvas);
 const ctx = canvas.getContext("2d");
 const markerCtx = markerCanvas.getContext("2d");
 
-//========================================
-// State
-//========================================
-
 const preview = document.getElementById("preview");
 
 let dragging = false;
@@ -38,18 +30,13 @@ let L = 70;
 let currentA = 0;
 let currentB = 0;
 
-let markerX = size / 2;
+let markerX = size / 2 - 100 ;
 let markerY = size / 2;
-
-//========================================
-// Marker
-//========================================
 
 function drawMarker() {
 
     markerCtx.clearRect(0, 0, size, size);
 
-    // 外側（黒）
     markerCtx.strokeStyle = "black";
     markerCtx.lineWidth = 4;
 
@@ -64,7 +51,6 @@ function drawMarker() {
     markerCtx.arc(markerX, markerY, 8, 0, Math.PI * 2);
     markerCtx.stroke();
 
-    // 内側（白）
     markerCtx.strokeStyle = "white";
     markerCtx.lineWidth = 2;
 
@@ -79,10 +65,6 @@ function drawMarker() {
     markerCtx.arc(markerX, markerY, 8, 0, Math.PI * 2);
     markerCtx.stroke();
 }
-
-//========================================
-// Color Update
-//========================================
 
 function updateColor(event) {
 
@@ -138,9 +120,6 @@ function updateL(value) {
     drawMarker();
 }
 
-//========================================
-// Pointer Events
-//========================================
 
 circle.addEventListener("pointerdown", event => {
 
@@ -172,10 +151,6 @@ circle.addEventListener("pointercancel", () => {
 
 });
 
-//========================================
-// Sliders
-//========================================
-
 document.getElementById("roughness").addEventListener("input", event => {
 
     const value = Number(event.target.value);
@@ -201,10 +176,6 @@ document.getElementById("L-slider").addEventListener("input", event => {
     updateL(event.target.value);
 
 });
-
-//========================================
-// Draw LAB Circle
-//========================================
 
 function drawLabCircle(L) {
 
@@ -246,10 +217,6 @@ function drawLabCircle(L) {
     ctx.putImageData(img, 0, 0);
 
 }
-
-//========================================
-// LAB → RGB
-//========================================
 
 function labToRgb(L, a, b) {
 
@@ -301,9 +268,79 @@ function labToRgb(L, a, b) {
 
 }
 
-//========================================
-// Initial Draw
-//========================================
+function rgbToLab(r, g, b) {
+    r /= 255;
+    g /= 255;
+    b /= 255;
 
-drawLabCircle(L);
-drawMarker();
+    // ガンマ補正
+    r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+    g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+    b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+
+    // sRGB  XYZ (D65)
+    let X = r * 0.4124564 + g * 0.3575761 + b * 0.1804375;
+    let Y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750;
+    let Z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041;
+
+    // D65ホワイトポイントで正規化
+    X /= 0.95047;
+    Y /= 1.00000;
+    Z /= 1.08883;
+
+    // XYZ CIELAB
+    const epsilon = 0.00885645167; 
+    const kappa = 7.78703703704;
+
+    X = X > epsilon ? Math.cbrt(X) : (kappa * X) + (16 / 116);
+    Y = Y > epsilon ? Math.cbrt(Y) : (kappa * Y) + (16 / 116);
+    Z = Z > epsilon ? Math.cbrt(Z) : (kappa * Z) + (16 / 116);
+
+    const resultL = (116 * Y) - 16;
+    const resulta = 500 * (X - Y);
+    const resultb = 200 * (Y - Z);
+
+    return { L: resultL, a: resulta, b: resultb };
+}
+
+
+function initColorPicker(albedo) {
+    console.log(`initColorPicker called with albedo: ${albedo}`); // albedo is a hex string like "#4b3c64"
+
+    const initialLab = rgbToLab(
+        parseInt(albedo.slice(1, 3), 16),
+        parseInt(albedo.slice(3, 5), 16),
+        parseInt(albedo.slice(5, 7), 16)
+    );
+    console.log(initialLab); // {L: 0.5101497862024686, a: 0.5939015573667994, b: -0.9494629242531027}
+
+    L = initialLab.L;
+    document.getElementById("L-slider").value = L;
+    currentA = initialLab.a;
+    currentB = initialLab.b;
+
+    document.getElementById("color-picker").show()
+
+    const rect = circle.getBoundingClientRect();
+    const radius = rect.width / 2;
+
+    console.log(`radius: ${radius}, currentA: ${currentA}, currentB: ${currentB}`);
+
+    markerX = (currentA / 128) * radius + radius;
+    markerY = radius - (currentB / 128) * radius;
+
+    console.log(`markerX: ${markerX}, markerY: ${markerY}`);
+
+    preview.style.backgroundColor = `lab(${L}% ${currentA} ${currentB})`;
+    preview.querySelector("span").style.color = `lab(${L}% ${currentA} ${currentB})`;
+
+    document.getElementById("roughness").value = window.modelMaterials[0].roughness;
+    document.getElementById("metalness").value = window.modelMaterials[0].metalness;
+    document.getElementById("L-slider").value = L;
+
+    drawLabCircle(L);
+    drawMarker();
+
+    document.getElementById("color-picker").close()
+    document.getElementById("gray-wall").style.display = "none";
+}

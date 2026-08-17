@@ -5,11 +5,15 @@
 <html lang="ja">
 
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
   <meta charset="UTF-8">
   <title>質感あつめ</title>
   <link rel="icon" href="{% static_ts 'image/favicon.ico' %}">
   <link rel="stylesheet" href="{% static_ts 'css/style.css' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet">
+
   {% block unique_css %}{% endblock %}
 </head>
 

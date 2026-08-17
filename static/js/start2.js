@@ -62,3 +62,33 @@ fileInput.addEventListener('change', () => {
 
     uploadForm.reset();
 });
+
+document.querySelector("button#start-goto-content02").addEventListener("click", () => {
+    document.getElementById("start-caution-content01").style.display = "none";
+    document.getElementById("start-caution-content02").style.display = "flex";
+});
+
+document.querySelector("button.startButton").addEventListener("click", () => {
+    document.getElementById("start-caution-content01").style.display = "flex";
+    document.getElementById("start-caution-content02").style.display = "none";
+});
+
+const content = document.getElementById("start-caution");
+
+function centerContent() {
+  const viewportHeight = window.visualViewport.height;
+  const contentHeight = content.offsetHeight;
+  const windowHeight = window.innerHeight;
+  //console.log(`Viewport height: ${viewportHeight}, Content height: ${contentHeight}, Window height: ${windowHeight}`);
+  const top = (viewportHeight - contentHeight) / 2;
+  if (viewportHeight == windowHeight) {
+    content.style.top = `0px`;
+  } else {
+    content.style.top = `${top}px`;
+  }
+}
+
+window.visualViewport.addEventListener("resize", centerContent);
+window.visualViewport.addEventListener("scroll", centerContent);
+
+centerContent();

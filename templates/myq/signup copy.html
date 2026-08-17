@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% load static_tags %}
+
+{% block unique_css %}
+<link rel="stylesheet" href="{% static_ts 'css/login.css' %}">
+<link rel="stylesheet" href="{% static_ts 'vendor/fontawesome@7.3.1/css/all.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div id="signup-form">
+
+  <h2>サインアップ</h2>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label for="{{ form.username.id_for_label }}">
+        {{ form.username.label }}
+      </label>
+
+      {{ form.username }}
+
+      {% if form.username.help_text %}
+      <span class="helptext">
+        {{ form.username.help_text }}
+      </span>
+      {% endif %}
+
+      {% for error in form.username.errors %}
+      <span class="field-error">
+        {{ error }}
+      </span>
+      {% endfor %}
+    </div>
+
+
+    <div class="form-group">
+      <label for="{{ form.email.id_for_label }}">
+        {{ form.email.label }}
+      </label>
+
+      {{ form.email }}
+
+      {% for error in form.email.errors %}
+      <span class="field-error">
+        {{ error }}
+      </span>
+      {% endfor %}
+    </div>
+
+
+    <div class="form-group">
+      <label for="{{ form.password.id_for_label }}">
+        {{ form.password.label }}
+      </label>
+
+      <div class="password-wrapper">
+        <input type="checkbox" id="checkPassword" class="password-toggle-check">
+
+        {{ form.password }}
+
+        <label for="checkPassword" class="eye-btn" aria-label="パスワードを表示">
+          <i class="fa fa-eye icon-show"></i>
+          <i class="fa fa-eye-slash icon-hide"></i>
+        </label>
+      </div>
+
+      {% if form.password.help_text %}
+      <span id="{{ form.password.id_for_label }}_helptext" class="helptext">
+        {{ form.password.help_text }}
+      </span>
+      {% endif %}
+
+      {% for error in form.password.errors %}
+      <span class="field-error">
+        {{ error }}
+      </span>
+      {% endfor %}
+    </div>
+
+
+    <div class="form-group">
+      <label for="{{ form.password_confirm.id_for_label }}">
+        {{ form.password_confirm.label }}
+      </label>
+
+      <div class="password-wrapper">
+        <input type="checkbox" id="checkPasswordConfirm" class="password-toggle-check">
+
+        {{ form.password_confirm }}
+
+        <label for="checkPasswordConfirm" class="eye-btn" aria-label="パスワード（確認）を表示">
+          <i class="fa fa-eye icon-show"></i>
+          <i class="fa fa-eye-slash icon-hide"></i>
+        </label>
+      </div>
+
+      {% for error in form.password_confirm.errors %}
+      <span class="field-error">
+        {{ error }}
+      </span>
+      {% endfor %}
+    </div>
+
+
+    <button type="submit">
+      登録する
+    </button>
+
+  </form>
+
+
+  <div class="login-container">
+    <span>すでにアカウントをお持ちの方は</span>
+    <a href="{% url 'login' %}" class="login-link">
+      ログイン
+    </a>
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('.password-toggle-check').forEach(checkbox => {
+    checkbox.addEventListener('change', (e) => {
+      const wrapper = e.target.closest('.password-wrapper');
+      const passwordInput = wrapper ? wrapper.querySelector('input[name]') : null;
+      if (passwordInput) {
+        passwordInput.type = e.target.checked ? 'text' : 'password';
+      }
+    });
+  });
+</script>
+
+{% include "myq/home-footer.html" %}
+
+{% endblock %}

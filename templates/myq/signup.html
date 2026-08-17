@@ -2,16 +2,255 @@
 {% load static_tags %}
 
 {% block unique_css %}
-<link rel="stylesheet" href="{% static_ts 'css/signup.css' %}">
+<link rel="stylesheet" href="{% static_ts 'css/login.css' %}">
+<link rel="stylesheet" href="{% static_ts 'vendor/fontawesome@7.3.1/css/all.css' %}">
 {% endblock %}
 
 {% block content %}
-<div id="signup">
+
+<div id="signup-form">
+
   <h2>サインアップ</h2>
+
   <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">登録する</button>
+
+    <div class="stepper">
+      <div class="step-item active" data-step="1">
+        <div class="step-number">1</div>
+        <span class="step-label">ユーザー名</span>
+      </div>
+      <div class="step-line" data-line="1"></div>
+      <div class="step-item" data-step="2">
+        <div class="step-number">2</div>
+        <span class="step-label">パスワード</span>
+      </div>
+      <div class="step-line" data-line="2"></div>
+      <div class="step-item" data-step="3">
+        <div class="step-number">3</div>
+        <span class="step-label">メール設定</span>
+      </div>
+    </div>
+
+    <div class="form-step active" data-step="1">
+      <div class="form-group">
+        <label for="{{ form.username.id_for_label }}">
+          {{ form.username.label }}
+        </label>
+        {{ form.username }}
+        {% if form.username.help_text %}
+        <span class="helptext">
+          {{ form.username.help_text }}
+        </span>
+        {% endif %}
+
+        {% for error in form.username.errors %}
+        <div class="error">
+          {{ error }}
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="step-buttons single">
+        <button type="button" class="btn-next">次へ</button>
+      </div>
+    </div>
+
+    <div class="form-step" data-step="2">
+      <div class="form-group">
+        <label for="{{ form.password.id_for_label }}">
+          {{ form.password.label }}
+        </label>
+
+        <div class="password-wrapper">
+          <input type="checkbox" id="checkPassword" class="password-toggle-check">
+          <input type="password" name="password" required aria-describedby="{{ form.password.id_for_label }}_helptext"
+            id="{{ form.password.id_for_label }}">
+          <label for="checkPassword" class="eye-btn" aria-label="パスワードを表示">
+            <i class="fa fa-eye icon-show"></i>
+            <i class="fa fa-eye-slash icon-hide"></i>
+          </label>
+        </div>
+
+        {% if form.password.help_text %}
+        <span id="{{ form.password.id_for_label }}_helptext" class="helptext">
+          {{ form.password.help_text }}
+        </span>
+        {% endif %}
+
+        {% for error in form.password.errors %}
+        <div class="error">
+          {{ error }}
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ form.password_confirm.id_for_label }}">
+          {{ form.password_confirm.label }}
+        </label>
+
+        <div class="password-wrapper">
+          <input type="checkbox" id="checkPasswordConfirm" class="password-toggle-check">
+          <input type="password" name="password_confirm" required id="{{ form.password_confirm.id_for_label }}">
+          <label for="checkPasswordConfirm" class="eye-btn" aria-label="パスワード（確認）を表示">
+            <i class="fa fa-eye icon-show"></i>
+            <i class="fa fa-eye-slash icon-hide"></i>
+          </label>
+        </div>
+      </div>
+
+      <div class="step-buttons">
+        <button type="button" class="btn-prev">戻る</button>
+        <button type="button" class="btn-next">次へ</button>
+      </div>
+    </div>
+
+    <div class="form-step" data-step="3">
+      <div class="form-group">
+        <label for="{{ form.email.id_for_label }}">
+          メールアドレス <span class="optional-badge">（任意）</span>
+        </label>
+
+        <input type="email" name="email" maxlength="320" id="{{ form.email.id_for_label }}"
+          placeholder="example@domain.com">
+
+        {% for error in form.email.errors %}
+        <div class="error">
+          {{ error }}
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="step-buttons">
+        <button type="button" class="btn-prev">戻る</button>
+        <button type="submit" class="btn-submit">登録する</button>
+      </div>
+    </div>
+
   </form>
+
+
+  <div class="login-container">
+    <span>すでにアカウントをお持ちの方は</span>
+    <a href="{% url 'login' %}" class="login-link">
+      ログイン
+    </a>
+  </div>
+
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const formSteps = document.querySelectorAll('.form-step');
+    const stepItems = document.querySelectorAll('.step-item');
+    const stepLines = document.querySelectorAll('.step-line');
+    const signupForm = document.querySelector('#signup-form form');
+    let currentStep = 1;
+
+    function showStep(stepNumber) {
+      formSteps.forEach(step => {
+        if (parseInt(step.dataset.step) === stepNumber) {
+          step.classList.add('active');
+          const firstInput = step.querySelector('input:not([type="checkbox"]):not([type="hidden"])');
+          if (firstInput) firstInput.focus();
+        } else {
+          step.classList.remove('active');
+        }
+      });
+
+      stepItems.forEach(item => {
+        const stepIdx = parseInt(item.dataset.step);
+        if (stepIdx === stepNumber) {
+          item.classList.add('active');
+          item.classList.remove('completed');
+        } else if (stepIdx < stepNumber) {
+          item.classList.remove('active');
+          item.classList.add('completed');
+        } else {
+          item.classList.remove('active', 'completed');
+        }
+      });
+
+      stepLines.forEach(line => {
+        const lineIdx = parseInt(line.dataset.line);
+        if (lineIdx < stepNumber) {
+          line.classList.add('active');
+        } else {
+          line.classList.remove('active');
+        }
+      });
+
+      currentStep = stepNumber;
+    }
+
+    function validateStep(stepNumber) {
+      const currentStepEl = document.querySelector(`.form-step[data-step="${stepNumber}"]`);
+      if (!currentStepEl) return true;
+
+      if (stepNumber === 2) {
+        const pass = document.getElementById('id_password');
+        const passConfirm = document.getElementById('id_password_confirm');
+        console.log(pass, passConfirm);
+        console.log(pass.value, passConfirm.value);
+        if (pass && passConfirm && pass.value !== passConfirm.value) {
+          passConfirm.setCustomValidity('パスワードが一致しません');
+          passConfirm.reportValidity();
+          return false;
+        } else if (passConfirm) {
+          passConfirm.setCustomValidity('');
+        }
+      }
+
+      const requiredInputs = currentStepEl.querySelectorAll('input[required]');
+      for (let input of requiredInputs) {
+        if (!input.checkValidity()) {
+          input.reportValidity();
+          return false;
+        }
+      }
+
+
+
+      return true;
+    }
+
+    document.querySelectorAll('.btn-next').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (validateStep(currentStep)) {
+          showStep(currentStep + 1);
+        }
+      });
+    });
+
+    document.querySelectorAll('.btn-prev').forEach(btn => {
+      btn.addEventListener('click', () => {
+        showStep(currentStep - 1);
+      });
+    });
+
+    if (signupForm) {
+      signupForm.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && currentStep < 3) {
+          e.preventDefault();
+          const nextBtn = document.querySelector(`.form-step[data-step="${currentStep}"] .btn-next`);
+          if (nextBtn) nextBtn.click();
+        }
+      });
+    }
+
+    document.querySelectorAll('.password-toggle-check').forEach(checkbox => {
+      checkbox.addEventListener('change', (e) => {
+        const wrapper = e.target.closest('.password-wrapper');
+        const passwordInput = wrapper ? wrapper.querySelector('input[type="password"], input[type="text"]') : null;
+        if (passwordInput) {
+          passwordInput.type = e.target.checked ? 'text' : 'password';
+        }
+      });
+    });
+  });
+</script>
+
+{% include "myq/home-footer.html" %}
+
 {% endblock %}

@@ -5,21 +5,47 @@ from .models import Profile
 
 class SimpleSignUpForm(forms.ModelForm):
     password = forms.CharField(
-        label='パスワード', 
+        label="パスワード",
         widget=forms.PasswordInput,
-        help_text="None"
+        help_text="8文字以上で入力してください。",
+    )
+
+    password_confirm = forms.CharField(
+        label="パスワード（確認）",
+        widget=forms.PasswordInput,
+    )
+
+    email = forms.EmailField(
+        label="メールアドレス",
+        required=False,
     )
 
     class Meta:
         model = User
-        fields = ('username',)
+        fields = ("username", "email")
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        password = cleaned_data.get("password")
+        password_confirm = cleaned_data.get("password_confirm")
+
+        if password and password_confirm and password != password_confirm:
+            self.add_error(
+                "password_confirm",
+                "パスワードが一致しません。",
+            )
+
+        return cleaned_data
 
     def save(self, commit=True):
         user = super().save(commit=False)
+
         user.set_password(self.cleaned_data["password"])
-        
+
         if commit:
             user.save()
+
         return user
 
 class ProfileForm(forms.ModelForm):

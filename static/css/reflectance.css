@@ -1,7 +1,31 @@
-html, body {
+html,
+body {
     margin: 0;
     overflow: hidden;
     background: #000;
+}
+
+main {
+    display: grid;
+    grid-template-rows: 33vh auto 1fr 5rem;
+    padding: 0;
+    height: 100dvh;
+}
+
+#gray-wall {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #33333388;
+    z-index: 999;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.23rem;
+    color: white;
 }
 
 #three-container {
@@ -20,7 +44,6 @@ canvas {
     padding: 10px 20px;
     margin: 10px 20px;
 }
-
 
 #circle {
     border-radius: 50%;
@@ -43,7 +66,7 @@ canvas {
 .parameter {
     display: grid;
     align-items: center;
-    margin: 12px 0;
+    margin: 16px 0;
     grid-template-columns: 1fr 2fr;
 }
 
@@ -74,11 +97,18 @@ canvas {
     top: 60%;
     transform: translate(-50%, -50%);
     padding-bottom: 50px;
+    overflow: hidden;
 }
 
-#L-slider{
-    width: stretch;
+#L-slider {
+    width: calc(100% - 12px);
     margin-top: 15px;
+}
+
+@supports (width: stretch) {
+    #L-slider {
+        width: stretch;
+    }
 }
 
 @container color-picker (width > 0px) {
@@ -91,36 +121,77 @@ canvas {
 
 input[type="range"] {
     -webkit-appearance: none;
-    appearance: none; 
-    height: 1rem;
+    appearance: none;
+    height: 1.3rem;
     cursor: pointer;
     overflow: hidden;
-    border-radius: 1rem;
+    border-radius: 1.3rem;
     border: 4px solid black;
     background: black;
 }
 
 input[type="range"]::-webkit-slider-runnable-track {
-    height: 1rem;
+    height: 1.3rem;
     background: rgb(87, 87, 87);
-    border-radius: 1rem;
+    border-radius: 1.3rem;
 }
 
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    appearance: none; 
-    height: 1rem;
-    width: 1rem;
+    appearance: none;
+    height: 1.3rem;
+    width: 1.3rem;
     background-color: white;
     border-radius: 50%;
     border: 1px solid hsl(0, 0%, 52%);
-  /*Colors*/
     box-shadow: -50rem 0 5rem 20rem hsl(0, 0%, 100%),
-                -40rem 0 5rem 30rem hsl(0, 0%, 47%),
-                -30rem 0 2rem 25rem hsl(0, 0%, 78%),
-                -25.5rem 0 0 25rem  hsl(0, 0%, 100%);
+        -40rem 0 5rem 30rem hsl(0, 0%, 47%),
+        -30rem 0 2rem 25rem hsl(0, 0%, 78%),
+        -25.5rem 0 0 25rem hsl(0, 0%, 100%);
 }
 
-button#preview>span{
+button#preview>span {
     filter: invert(100%) grayscale(100%) contrast(100);
+}
+
+#save-button {
+    width: fit-content;
+    justify-self: end;
+    font-size: 1rem;
+    background: #eeeeee;
+    color: #121212;
+    border-radius: 10px;
+    padding: 10px 20px;
+    margin: 10px 20px;
+}
+
+#howtouse {
+    background: rgba(17, 17, 17, 0.9);
+    color: white;
+    border-radius: 2px;
+    padding: 5px 20px;
+    margin: 10px 20px;
+    overflow: scroll;
+
+    &>h2 {
+        text-align: center;
+        margin: 0;
+    }
+}
+
+button#howtouse-button {
+    width: fit-content;
+    justify-self: end;
+    font-size: 1rem;
+    background: #eeeeee;
+    color: #121212;
+    border-radius: 10px;
+    padding: 10px 20px;
+    margin: 10px 20px;
+}
+
+div#button-container {
+    display: flex;
+    justify-content: space-around;
+    flex-direction: row;
 }

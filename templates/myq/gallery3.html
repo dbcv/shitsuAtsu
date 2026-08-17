@@ -14,7 +14,7 @@
     <div class="gallery-grid">
         {% for seg_photo in segmented_photos %}
         <div class="gallery-item" id="photo-{{ seg_photo.uuid }}">
-            <a href="{{ seg_photo.get_image_url }}" target="_blank">
+            <a href="{% url 'reflectance_view' uuid=seg_photo.uuid %}" target="_blank">
                 <img src="{{ seg_photo.get_image_url_256 }}" alt="{{ seg_photo }}" loading="lazy">
             </a>
             <button class="delete-button" data-uuid="{{ seg_photo.uuid }}" data-type="segmented">&times;</button>

@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js'
-import { DRACOLoader }from 'three/addons/loaders/DRACOLoader.js'
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'
 
 const scene = new THREE.Scene()
 
@@ -16,7 +16,27 @@ const renderer = new THREE.WebGLRenderer({
     antialias: true
 })
 
-renderer.setSize(window.innerWidth, window.innerHeight*0.3)
+// closedBy dialog Polyfill
+const supportsClosedBy =
+    "closedBy" in HTMLDialogElement.prototype;
+
+if (supportsClosedBy) {
+    // 特に何もしない
+} else {
+    const backdrop = document.querySelectorAll(":not(dialog):not(dialog *)")
+    backdrop.forEach(el => {
+        el.addEventListener("click", (e) => {
+            const openDialogs = document.querySelectorAll("dialog[open]")
+            openDialogs.forEach(dialog => {
+                if (e.target == dialog) {
+                    dialog.close()
+                }
+            })
+        })
+    })
+}
+
+renderer.setSize(window.innerWidth, window.innerHeight * 0.3)
 renderer.setPixelRatio(window.devicePixelRatio)
 
 renderer.outputColorSpace = THREE.SRGBColorSpace
@@ -24,48 +44,6 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping
 renderer.toneMappingExposure = 1.0
 
 document.getElementById('three-container').appendChild(renderer.domElement)
-
-// const canvas = document.createElement('canvas')
-// canvas.width = 1024
-// canvas.height = 1024
-
-// const ctx = canvas.getContext('2d')
-
-// ctx.fillStyle = '#ffffff'
-// ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-// ctx.strokeStyle = '#000000'
-// ctx.lineWidth = 2
-
-// const gridSize = 64
-
-// for (let i = 0; i <= canvas.width; i += gridSize) {
-//     ctx.beginPath()
-//     ctx.moveTo(i, 0)
-//     ctx.lineTo(i, canvas.height)
-//     ctx.stroke()
-
-//     ctx.beginPath()
-//     ctx.moveTo(0, i)
-//     ctx.lineTo(canvas.width, i)
-//     ctx.stroke()
-// }
-
-// const gridTexture = new THREE.CanvasTexture(canvas)
-
-
-// const room = new THREE.Mesh(
-//     new THREE.BoxGeometry(20, 20, 20),
-//     new THREE.MeshStandardMaterial({
-//         map: gridTexture,
-//         emissive: 0xffffff,
-//         emissiveMap: gridTexture,
-//         emissiveIntensity: 2,
-//         side: THREE.BackSide
-//     })
-// )
-
-// scene.add(room)
 
 const directionalLight = new THREE.DirectionalLight(
     0xffffff,
@@ -89,22 +67,6 @@ rgbeLoader.load(hdriURL, (texture) => {
     pmremGenerator.dispose()
 })
 
-// const renderTarget =
-//     new THREE.WebGLCubeRenderTarget(512)
-
-// const cubeCamera =
-//     new THREE.CubeCamera(
-//         0.1,
-//         1000,
-//         renderTarget
-//     )
-
-// scene.add(cubeCamera)
-
-// scene.environment = renderTarget.texture
-
-
-
 const controls = new OrbitControls(
     camera,
     renderer.domElement
@@ -120,7 +82,7 @@ loader.setMeshoptDecoder(MeshoptDecoder)
 const dracoLoader = new DRACOLoader()
 
 dracoLoader.setDecoderPath(
-    "{% static 'js/draco@1.5.7/decorders/' %}"
+    "{% static 'js/draco@1.5.7/decoders/' %}"
 )
 window.modelMaterials = []
 
@@ -141,20 +103,21 @@ loader.load(
                 const material = child.material
 
                 if (material) {
-                    if ('roughness' in material) {material.roughness = roughness}
+                    if ('roughness' in material) { material.roughness = roughness }
 
-                    if ('metalness' in material) {material.metalness = metalness}
+                    if ('metalness' in material) { material.metalness = metalness }
 
-                    if ('color' in material) {material.color.set(albedo)}
+                    if ('color' in material) { material.color.set(albedo) }
 
                     material.envMapIntensity = 1.0
                     material.needsUpdate = true
                 }
                 window.modelMaterials.push(material)
+                initColorPicker(albedo)
             }
         })
 
-        
+
         scene.add(model)
     }
 )
@@ -172,6 +135,42 @@ window.addEventListener('resize', () => {
     )
 })
 
+const saveButton = document.getElementById('save-button');
+
+
+saveButton.addEventListener('click', () => {
+    const csrfToken = document.getElementById('csrf-token-input').value;
+    const roughness = window.modelMaterials[0].roughness;
+    const metalness = window.modelMaterials[0].metalness;
+    const albedo = window.modelMaterials[0].color.getHexString();
+
+    const data = {
+        photo_uuid: objectuuid,
+        roughness: roughness,
+        metalness: metalness,
+        albedo: albedo
+    };
+
+    console.log('Saving reflectance parameters:', data);
+
+    fetch(api_save_reflectance_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify(data)
+    })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            location.href = gallery3URL;
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
+});
+
 function animate() {
 
     requestAnimationFrame(animate)
@@ -179,7 +178,6 @@ function animate() {
     controls.update()
 
     renderer.render(scene, camera)
-    // cubeCamera.update(renderer, scene)
 }
 
 animate()

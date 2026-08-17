@@ -69,7 +69,7 @@ def segment_image_api2(request):
             f"segment:{session_id}",
             {
                 "mask": encoded,
-                "photo_id": original_photo.id,
+                "photo_id": original_photo.uuid,
                 "shape": shape
             },
             timeout=60 * 10
@@ -130,6 +130,7 @@ Rules:
 * Do not use commas or lists.
 * Focus on what would be visible in an image.
 * Output only the phrase.
+* If the term is a proper noun, please write a sentence that explains what it refers to.
 
 Example:
 
