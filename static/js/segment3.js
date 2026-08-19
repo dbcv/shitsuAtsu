@@ -5,10 +5,40 @@ const saveSegmentedImageElement = document.getElementById('segmented-image-save'
 
 const editPopover = document.getElementById('edit-popover2');
 const saveButton = document.getElementById('save-button');
+const noDetectionDialog = document.getElementById('no-detection-dialog');
+const closeNoDetectionBtn = document.getElementById('close-no-detection-btn');
+const closeNoDetectionIconBtn = document.getElementById('close-no-detection-icon-btn');
 let lastResultBase64 = null;
 const csrfToken = document.getElementById('csrf-token-input').value;
 let controller = null;
 let sessionId = null;
+
+function showNoDetectionDialog(message) {
+    if (noDetectionDialog) {
+        if (typeof noDetectionDialog.showModal === 'function') {
+            noDetectionDialog.showModal();
+        }
+    } else {
+        alert(message || 'マーカーを配置して対象を切り抜いてください');
+    }
+}
+
+function closeNoDetectionDialog() {
+    if (noDetectionDialog && noDetectionDialog.open) {
+        noDetectionDialog.close();
+    }
+}
+
+if (closeNoDetectionBtn) closeNoDetectionBtn.addEventListener('click', closeNoDetectionDialog);
+if (closeNoDetectionIconBtn) closeNoDetectionIconBtn.addEventListener('click', closeNoDetectionDialog);
+if (noDetectionDialog) {
+    noDetectionDialog.addEventListener('click', (e) => {
+        const dialogCard = noDetectionDialog.querySelector('.dialog-card');
+        if (dialogCard && !dialogCard.contains(e.target)) {
+            closeNoDetectionDialog();
+        }
+    });
+}
 
 class TimerBar {
     constructor(root) {
@@ -333,13 +363,23 @@ function redraw(sendSam2 = true, start = false, end = false, timerlimit = 2000) 
                 .then(response => response.json())
                 .then(data => {
                     timer.controlTimer(2, 360, 0.5);
+                    controller = null;
+                    const grayWall = document.getElementById("gray-wall");
+                    if (grayWall) grayWall.style.display = "none";
+
                     if (data.success) {
                         editSegmentedImageElement.src = `data:image/png;base64,${data.image_base64}`;
                         sessionId = data.session_id;
                         loadOverlayImage(`data:image/png;base64,${data.image_base64}`);
-                        controller = null;
-                        document.getElementById("gray-wall").style.display = "none";
                     } else {
+                        overlay_image = null;
+                        overlay_imageLoaded = false;
+                        timerComment.innerText = "未検出";
+                        timerComment.removeAttribute("data-fin");
+                        saveButton.classList.add("elm-hide");
+                        redraw(false, false, false);
+                        const msg = data.message || "マーカーを配置して対象を切り抜いてください";
+                        showNoDetectionDialog(msg);
                     }
                 })
                 .catch(err => {
@@ -347,6 +387,9 @@ function redraw(sendSam2 = true, start = false, end = false, timerlimit = 2000) 
                         console.log('Abort');
                     } else {
                         console.error('Fetchエラー:', err);
+                        const grayWall = document.getElementById("gray-wall");
+                        if (grayWall) grayWall.style.display = "none";
+                        timerComment.innerText = "エラー";
                     }
                 });
         }, timerlimit)

@@ -27,11 +27,11 @@
 
     const modelURL = "{% static 'models/model.glb' %}"
     const hdriURL = "{% static 'hdri/lilienstein_1k.hdr' %}"
-    const roughness = "{{ object.original_photo.roughness }}"
-    const metalness = "{{ object.original_photo.metalness }}"
-    const albedo = "{{ object.original_photo.albedo }}"
+    const roughness = "{{ object.roughness }}"
+    const metalness = "{{ object.metalness }}"
+    const albedo = "{{ object.albedo }}"
     const api_save_reflectance_URL = "{% url 'register_reflectance' %}"
-    const gallery3URL = "{% url 'photo_gallery3' %}"
+    const gallery3URL = "{% url 'photo_gallery' %}#segmented"
     
 </script>
 
@@ -47,15 +47,15 @@
 <div id="parameter-panel">
     <div class="parameter">
         <label for="roughness">粗さ:</label>
-        <input type="range" id="roughness" name="roughness" min="0" max="1" step="0.01" value="{{ object.original_photo.roughness }}">
+        <input type="range" id="roughness" name="roughness" min="0" max="1" step="0.01" value="{{ object.roughness }}">
     </div>
     <div class="parameter">
         <label for="metalness">金属度:</label>
-        <input type="range" id="metalness" name="metalness" min="0" max="1" step="0.01" value="{{ object.original_photo.metalness }}">
+        <input type="range" id="metalness" name="metalness" min="0" max="1" step="0.01" value="{{ object.metalness }}">
     </div>
     <div class="parameter">
         <label for="albedo">色:</label>
-        <input type="color" id="albedo" name="albedo" value="{{ object.original_photo.albedo }}" hidden>
+        <input type="color" id="albedo" name="albedo" value="{{ object.albedo }}" hidden>
         <button id="preview" command="show-modal" commandfor="color-picker"><span>色を選択</span></button>
     </div>
 </div>

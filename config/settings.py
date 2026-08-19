@@ -158,7 +158,7 @@ import os
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
-SVG_DIR = os.path.join(BASE_DIR, "static/svg")
+SVG_DIRS = [os.path.join(BASE_DIR, "static", "svg")]
 
 # config/settings.py (末尾に追記)
 LOGIN_REDIRECT_URL = "/"
@@ -173,3 +173,5 @@ CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", default="redis://localhost:6379
 CELERY_RESULT_BACKEND = env.str(
     "CELERY_RESULT_BACKEND", default="redis://localhost:6379/0"
 )
+SUPPORT_EMAIL = env.str("SUPPORT_EMAIL", default="support@example.com")
+

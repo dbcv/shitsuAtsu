@@ -3,7 +3,7 @@ from django.urls import path, re_path
 
 from .views.autoLogin import auto_login_view
 from .views.gallery import PhotoGallery2View, PhotoGallery3View, PhotoGalleryView
-from .views.homemenu import Home3View, HomeView, Start3View
+from .views.homemenu import Home3View, Start3View
 from .views.iconserve import faviconserve
 from .views.photoserve import serve_photo2, serve_segmented_photo2
 from .views.reflectance import ThreeView, register_reflectance
@@ -11,7 +11,7 @@ from .views.segment import PhotoSegment3View, segment_image_api2
 from .views.views import PhotoUploadView, delete_image_api, save_segmented_image
 
 urlpatterns = [
-    path("", HomeView.as_view(), name="home"),
+    path("", Home3View.as_view(), name="home"),
     path("home2/", Home3View.as_view(), name="home2"),
     path("start/", Start3View.as_view(), name="start"),
     path("upload/", PhotoUploadView.as_view(), name="upload"),

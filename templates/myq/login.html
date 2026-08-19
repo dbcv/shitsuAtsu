@@ -32,7 +32,7 @@
 
       {{ form.password}}
       <div class="forgot-password-container">
-        <a href="#" class="forgot-password-link">パスワードを忘れた場合</a>
+        <button type="button" class="forgot-password-link" id="forgot-password-trigger">パスワードを忘れた場合</button>
       </div>
     </div>
     <button type="submit">ログイン</button>
@@ -42,5 +42,63 @@
     <a href="{% url 'signup' %}" class="signup-link">新規登録</a>
   </div>
 </div>
+
+<dialog id="forgot-password-dialog" class="forgot-password-dialog">
+  <div class="dialog-card">
+    <div class="dialog-header">
+      <h3 class="dialog-title">パスワードをお忘れの場合</h3>
+      <button type="button" class="dialog-close-icon" id="close-dialog-icon-btn" aria-label="閉じる">&times;</button>
+    </div>
+    <div class="dialog-body">
+      <p class="dialog-desc">
+        パスワードの再設定につきましては、登録時の<strong>ユーザー名</strong>または<strong>メールアドレス</strong>をご記載の上、以下のサポート窓口までご連絡ください。
+      </p>
+      <div class="support-email-box">
+        <span class="support-email-label">サポート窓口:</span>
+        <a href="mailto:{{ support_email }}" class="support-email-address">{{ support_email }}</a>
+      </div>
+    </div>
+    <div class="dialog-footer">
+      <button type="button" class="dialog-btn-close" id="close-dialog-btn">閉じる</button>
+    </div>
+  </div>
+</dialog>
+
 {% include "myq/home-footer.html" %}
 {% endblock %}
+
+{% block unique_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const trigger = document.getElementById('forgot-password-trigger');
+    const dialog = document.getElementById('forgot-password-dialog');
+    const closeBtn = document.getElementById('close-dialog-btn');
+    const closeIconBtn = document.getElementById('close-dialog-icon-btn');
+
+    if (trigger && dialog) {
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        dialog.showModal();
+      });
+    }
+
+    const closeDialog = () => {
+      if (dialog && dialog.open) {
+        dialog.close();
+      }
+    };
+
+    if (closeBtn) closeBtn.addEventListener('click', closeDialog);
+    if (closeIconBtn) closeIconBtn.addEventListener('click', closeDialog);
+
+    if (dialog) {
+      dialog.addEventListener('click', (e) => {
+        const dialogCard = dialog.querySelector('.dialog-card');
+        if (dialogCard && !dialogCard.contains(e.target)) {
+          dialog.close();
+        }
+      });
+    }
+  });
+</script>
+{% endblock %}

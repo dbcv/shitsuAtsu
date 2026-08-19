@@ -39,7 +39,10 @@ def register_reflectance(request):
     try:
         photo.roughness = data.get("roughness")
         photo.metalness = data.get("metalness")
-        photo.albedo = data.get("albedo")
+        albedo = data.get("albedo")
+        if albedo and not str(albedo).startswith("#"):
+            albedo = f"#{albedo}"
+        photo.albedo = albedo
         photo.save(update_fields=["roughness", "metalness", "albedo"])
 
         return JsonResponse(

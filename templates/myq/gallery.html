@@ -1,166 +1,172 @@
 {% extends "base.html" %}
+{% load svg %}
+{% load static %}
+{% load static_tags %}
+
+{% block unique_css %}
+<link rel="stylesheet" href="{% static_ts 'css/gallery.css' %}">
+{% endblock %}
 
 {% block content %}
-
-<style>
-    /* タブのスタイル */
-    .tab-buttons {
-        border-bottom: 2px solid #ccc;
-        margin-bottom: 20px;
-    }
-
-    .tab-button {
-        padding: 10px 20px;
-        border: none;
-        background-color: transparent;
-        cursor: pointer;
-        font-size: 1.1em;
-        border-bottom: 3px solid transparent;
-        margin-bottom: -2px;
-    }
-
-    .tab-button.active {
-        border-bottom-color: #007bff;
-        font-weight: bold;
-    }
-
-    /* タブコンテンツのスタイル */
-    .tab-pane {
-        display: none;
-        /* デフォルトでは非表示 */
-    }
-
-    .tab-pane.active {
-        display: block;
-        /* activeクラスがついたものだけ表示 */
-    }
-
-    /* ギャラリーのスタイル */
-    .gallery-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 15px;
-    }
-
-    .gallery-item {
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        overflow: hidden;
-        position: relative;
-    }
-
-    .gallery-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-        transition: transform 0.2s ease-in-out;
-    }
-
-    .gallery-item:hover img {
-        transform: scale(1.05);
-    }
-
-    .delete-button {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        width: 28px;
-        height: 28px;
-        background-color: rgba(0, 0, 0, 0.6);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 16px;
-        line-height: 28px;
-        text-align: center;
-        opacity: 0;
-        transition: opacity 0.2s;
-    }
-
-    .gallery-item:hover .delete-button {
-        opacity: 1;
-    }
-</style>
-
-<h2>ギャラリー</h2>
-
-<div class="tab-buttons">
-    <button class="tab-button active" data-tab="originals">元画像</button>
-    <button class="tab-button" data-tab="segmented">切り抜き画像</button>
-</div>
+<h1>ギャラリー</h1>
+{% include "myq/gallery-header.html" %}
 
 <input type="hidden" id="csrf-token-input" value="{{ csrf_token }}">
 
 <div class="tab-content">
-    <div id="originals" class="tab-pane active">
-        <h3>元画像一覧</h3>
+    <div id="originals" class="tab-pane">
         <div class="gallery-grid">
             {% for photo in original_photos %}
             <div class="gallery-item" id="photo-{{ photo.uuid }}">
-                <a href="{% url 'photo_segment' uuid=photo.uuid %}">
-                    <img src="{{ photo.get_image_url }}" alt="{{ photo.title }}">
-                </a>
-                <button class="delete-button" data-uuid="{{ photo.uuid }}" data-type="original">&times;</button>
+                <button type="button" class="gallery-item-btn" data-uuid="{{ photo.uuid }}" data-type="original"
+                    data-preview-url="{{ photo.get_image_url_256 }}"
+                    data-edit-url="{% url 'photo_segment' uuid=photo.uuid %}"
+                    data-title="{{ photo.title|default:'元画像' }}" aria-label="{{ photo.title|default:'元画像' }}のプレビューを開く">
+                    <img src="{{ photo.get_image_url_256 }}" alt="{{ photo.title }}" loading="lazy">
+                </button>
             </div>
             {% empty %}
-            <p>アップロードされた元画像はありません。</p>
+            <p>アップロードされた画像はありません。</p>
             {% endfor %}
         </div>
     </div>
 
     <div id="segmented" class="tab-pane">
-        <h3>切り抜き画像一覧</h3>
         <div class="gallery-grid">
             {% for seg_photo in segmented_photos %}
             <div class="gallery-item" id="photo-{{ seg_photo.uuid }}">
-                <a href="{{ seg_photo.get_image_url }}" target="_blank">
-                    <img src="{{ seg_photo.get_image_url }}" alt="{{ seg_photo }}">
-                </a>
-                <button class="delete-button" data-uuid="{{ seg_photo.uuid }}" data-type="segmented">&times;</button>
+                <button type="button" class="gallery-item-btn" data-uuid="{{ seg_photo.uuid }}" data-type="segmented"
+                    data-preview-url="{{ seg_photo.get_image_url_256 }}"
+                    data-edit-url="{% url 'reflectance_view' uuid=seg_photo.uuid %}"
+                    data-title="{{ seg_photo|default:'切り抜き画像' }}"
+                    aria-label="{{ seg_photo|default:'切り抜き画像' }}のプレビューを開く">
+                    <img src="{{ seg_photo.get_image_url_256 }}" alt="{{ seg_photo }}" loading="lazy">
+                </button>
             </div>
             {% empty %}
-            <p>作成された切り抜き画像はありません。</p>
+            <p>切り抜き画像はありません。</p>
             {% endfor %}
         </div>
     </div>
 </div>
 
+<!-- 画像プレビュー・操作モーダル -->
+<dialog id="image-modal" class="image-modal">
+    <div class="image-modal-card">
+        <div class="image-modal-header">
+            <h3 id="modal-title" class="image-modal-title">画像プレビュー</h3>
+            <button type="button" id="modal-close-icon" class="modal-close-icon" aria-label="閉じる">&times;</button>
+        </div>
+        <div class="image-modal-body">
+            <div class="image-preview-wrapper">
+                <img id="modal-preview-img" src="" alt="プレビュー" class="modal-preview-img">
+            </div>
+        </div>
+        <div class="image-modal-footer">
+            <button type="button" id="modal-delete-btn" class="modal-btn modal-btn-delete">削除</button>
+            <div class="modal-actions-right">
+                <button type="button" id="modal-cancel-btn" class="modal-btn modal-btn-secondary">閉じる</button>
+                <a id="modal-edit-link" href="#" target="_blank" rel="noopener noreferrer"
+                    class="modal-btn modal-btn-primary">編集</a>
+            </div>
+        </div>
+    </div>
+</dialog>
+
+{% include "myq/home-footer.html" %}
+
 <script>
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabPanes = document.querySelectorAll('.tab-pane');
+    function updateGalleryTab() {
+        const hash = window.location.hash;
+        const isSegmented = (hash === '#segmented' || hash === '#segmented_photos');
 
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            // すべてのボタンとパネルから active クラスを削除
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-            tabPanes.forEach(pane => pane.classList.remove('active'));
+        const originalsPane = document.getElementById('originals');
+        const segmentedPane = document.getElementById('segmented');
+        const originalBtn = document.getElementById('tab-btn-original');
+        const segmentedBtn = document.getElementById('tab-btn-segmented');
 
-            // クリックされたボタンに active クラスを追加
-            button.classList.add('active');
+        if (isSegmented) {
+            originalsPane.classList.remove('active');
+            segmentedPane.classList.add('active');
+            if (originalBtn) originalBtn.classList.remove('active');
+            if (segmentedBtn) segmentedBtn.classList.add('active');
+        } else {
+            originalsPane.classList.add('active');
+            segmentedPane.classList.remove('active');
+            if (originalBtn) originalBtn.classList.add('active');
+            if (segmentedBtn) segmentedBtn.classList.remove('active');
+        }
+    }
 
-            // 対応するパネルを表示
-            const tabId = button.getAttribute('data-tab');
-            document.getElementById(tabId).classList.add('active');
-        });
-    });
+    window.addEventListener('DOMContentLoaded', updateGalleryTab);
+    window.addEventListener('hashchange', updateGalleryTab);
+    // 初期ロード直後にも即時実行
+    updateGalleryTab();
+
     const csrfToken = document.getElementById('csrf-token-input').value;
-    const galleryGrid = document.querySelector('.gallery-grid');
+    const modal = document.getElementById('image-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const modalPreviewImg = document.getElementById('modal-preview-img');
+    const modalEditLink = document.getElementById('modal-edit-link');
+    const modalDeleteBtn = document.getElementById('modal-delete-btn');
+    const modalCloseIcon = document.getElementById('modal-close-icon');
+    const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
-    // イベント委譲を使って、ギャラリー全体でクリックイベントを監視
+    let currentItem = {
+        uuid: null,
+        type: null
+    };
+
+    function openModal(button) {
+        currentItem.uuid = button.dataset.uuid;
+        currentItem.type = button.dataset.type;
+
+        modalTitle.textContent = "";
+        modalPreviewImg.src = button.dataset.previewUrl;
+        modalPreviewImg.alt = button.dataset.title || 'プレビュー';
+        modalEditLink.href = button.dataset.editUrl;
+
+        if (modal && typeof modal.showModal === 'function') {
+            modal.showModal();
+        }
+    }
+
+    function closeModal() {
+        if (modal && modal.open) {
+            modal.close();
+            modalPreviewImg.src = '';
+        }
+    }
+
     document.querySelector('.tab-content').addEventListener('click', function (event) {
-        // クリックされたのが削除ボタンかチェック
-        if (event.target.classList.contains('delete-button')) {
-            const button = event.target;
-            const imageUuid = button.dataset.uuid;
-            const imageType = button.dataset.type;
+        const itemBtn = event.target.closest('.gallery-item-btn');
+        if (itemBtn) {
+            openModal(itemBtn);
+        }
+    });
 
-            // ユーザーに確認
+    if (modalCloseIcon) modalCloseIcon.addEventListener('click', closeModal);
+    if (modalCancelBtn) modalCancelBtn.addEventListener('click', closeModal);
+
+    if (modal) {
+        modal.addEventListener('click', function (event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    }
+
+    // 削除処理
+    if (modalDeleteBtn) {
+        modalDeleteBtn.addEventListener('click', function () {
+            if (!currentItem.uuid || !currentItem.type) return;
+
             if (confirm('この画像を本当に削除しますか？この操作は元に戻せません。')) {
                 const formData = new FormData();
-                formData.append('uuid', imageUuid);
-                formData.append('type', imageType);
+                formData.append('uuid', currentItem.uuid);
+                formData.append('type', currentItem.type);
+
+                modalDeleteBtn.disabled = true;
 
                 fetch("{% url 'api_delete_image' %}", {
                     method: 'POST',
@@ -172,11 +178,11 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            // 成功したら、DOMから画像要素を削除
-                            const imageElement = document.getElementById(`photo-${imageUuid}`);
+                            const imageElement = document.getElementById(`photo-${currentItem.uuid}`);
                             if (imageElement) {
                                 imageElement.remove();
                             }
+                            closeModal();
                         } else {
                             alert('削除に失敗しました: ' + data.error);
                         }
@@ -184,10 +190,12 @@
                     .catch(error => {
                         console.error('Error:', error);
                         alert('削除処理中に通信エラーが発生しました。');
+                    })
+                    .finally(() => {
+                        modalDeleteBtn.disabled = false;
                     });
             }
-        }
-    });
+        });
+    }
 </script>
-
 {% endblock %}

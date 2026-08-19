@@ -7,22 +7,20 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import numpy as np
-import requests
 import torch
 from accelerate import Accelerator
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, Form
 from fastapi.responses import JSONResponse
 from PIL import Image, ImageOps, UnidentifiedImageError
-from transformers import Sam3TrackerModel, Sam3TrackerProcessor
-
-from config import settings
 from sam3.model.sam3_image_processor import Sam3Processor
 from sam3.model_builder import build_sam3_image_model
+from transformers import Sam3TrackerModel, Sam3TrackerProcessor
 
-SAM3_PROCESSOR = None
-SAM3_TRACKER_MODEL = None
-SAM3_TRACKER_PROCESSOR = None
+SAM3_PROCESSOR: Sam3Processor | None = None
+SAM3_TRACKER_MODEL: Sam3TrackerModel | None = None
+SAM3_TRACKER_PROCESSOR: Sam3TrackerProcessor | None = None
 BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 def apply_mask_to_cutout(original_image, mask):
     mask_bool = mask > 0
@@ -30,12 +28,12 @@ def apply_mask_to_cutout(original_image, mask):
     img_rgba = original_image.convert("RGBA")
     img_np = np.array(img_rgba)
 
-    h, w, _ = img_np.shape
     new_img_np = np.zeros_like(img_np)
 
     new_img_np[mask_bool] = img_np[mask_bool]
 
     return Image.fromarray(new_img_np)
+
 
 def max_square_submatrix(matrix: np.ndarray) -> np.ndarray:
     n, m = matrix.shape
@@ -50,7 +48,7 @@ def max_square_submatrix(matrix: np.ndarray) -> np.ndarray:
                 if i == 0 or j == 0:
                     dp[i, j] = 1
                 else:
-                    dp[i, j] = min(dp[i-1, j], dp[i, j-1], dp[i-1, j-1]) + 1
+                    dp[i, j] = min(dp[i - 1, j], dp[i, j - 1], dp[i - 1, j - 1]) + 1
 
                 if dp[i, j] > max_size:
                     max_size = dp[i, j]
@@ -61,11 +59,11 @@ def max_square_submatrix(matrix: np.ndarray) -> np.ndarray:
     if max_size == 0:
         return np.zeros_like(matrix)
 
-    center = np.array([n/2, m/2])
-    best_pos = (0,0)
+    center = np.array([n / 2, m / 2])
+    best_pos = (0, 0)
     best_dist = float("inf")
 
-    for (i, j) in candidates:
+    for i, j in candidates:
         half = max_size / 2
         square_center = np.array([i - half + 0.5, j - half + 0.5])
         dist = np.linalg.norm(square_center - center)
@@ -81,21 +79,22 @@ def max_square_submatrix(matrix: np.ndarray) -> np.ndarray:
 
     return result
 
+
 def crop_with_mask(image: Image.Image, mask: np.ndarray) -> Image.Image:
     """
     マスクが1の部分を含む最小矩形で画像をクロップする
     - image: PIL.Image.Image
     - mask:  2D numpy array (0 or 1), 正方形
-    
+
     return: PIL.Image.Image（クロップ後）
     """
     coords = np.argwhere(mask == 1)
     if coords.size == 0:
         raise ValueError("マスクに1が含まれていません")
-    
+
     y_min, x_min = coords.min(axis=0)
     y_max, x_max = coords.max(axis=0)
-    
+
     h, w = mask.shape
     if (image.width, image.height) != (w, h):
         mask_h, mask_w = mask.shape
@@ -109,36 +108,25 @@ def crop_with_mask(image: Image.Image, mask: np.ndarray) -> Image.Image:
     cropped = image.crop((x_min, y_min, x_max, y_max))
     return cropped
 
+
 def convert_to_optimized_bw(image: Image.Image) -> Image.Image:
 
     try:
         img = image.convert("RGBA")
-
-        # 2. アルファチャンネルを取得する
-        # alphaチャンネルは、透明なピクセルが0(黒)、不透明なピクセルが255(白)になる
-        alpha = img.getchannel('A')
-
-        # 3. 色を反転させる (白黒反転)
-        # これで、透明だった部分が白(255)、不透明だった部分が黒(0)になる
-        # Pillowの機能を使えば、各ピクセルを自分でループ処理する必要がない
+        alpha = img.getchannel("A")
         inverted_alpha = Image.eval(alpha, lambda a: 255 - a)
 
-        # 4. 2値画像('1')に変換してファイルサイズを最小化する
-        # '1'モードは1ピクセルを1ビットで表現するため、データ量が非常に小さい
-        # dither=Image.NONE を指定して、中間色を作らないようにする
-        final_image = inverted_alpha.convert('1', dither=Image.Dither.NONE)
+        final_image = inverted_alpha.convert("1", dither=Image.Dither.NONE)
 
-        # 5. 最適化オプションを有効にして保存
         return final_image
-        final_image.save(output_path, 'PNG', optimize=True)
-        print(f"画像を変換し、'{output_path}' に保存しました。")
 
     except FileNotFoundError:
-        print(f"エラー: 入力ファイルが見つかりません")
+        print("エラー: 入力ファイルが見つかりません")
         return image
     except (OSError, ValueError) as e:
         print(f"エラーが発生しました: {e}")
         return image
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -152,17 +140,9 @@ async def lifespan(app: FastAPI):
 
     print(f"Using device: {device}")
 
-    bpe_path = (
-        BASE_DIR
-        / "sam3"
-        / "sam3"
-        / "assets"
-        / "bpe_simple_vocab_16e6.txt.gz"
-    )
+    bpe_path = BASE_DIR / "sam3" / "sam3" / "assets" / "bpe_simple_vocab_16e6.txt.gz"
 
-    sam3_model = build_sam3_image_model(
-        bpe_path=str(bpe_path)
-    )
+    sam3_model = build_sam3_image_model(bpe_path=str(bpe_path))
 
     SAM3_PROCESSOR = Sam3Processor(sam3_model)
     SAM3_TRACKER_MODEL = Sam3TrackerModel.from_pretrained("facebook/sam3").to(device)
@@ -179,15 +159,22 @@ app = FastAPI(lifespan=lifespan)
 
 
 @app.post("/segment_text")
-async def segment_text(
-    image_path: str = Form(...),
-    description: str = Form(...)
-):
+async def segment_text(image_path: str = Form(...), description: str = Form(...)):
     try:
         image_pil = Image.open(image_path)
         image_pil = ImageOps.exif_transpose(image_pil).convert("RGB")
 
         image64, masks, shape = segment_with_text(image_pil, description)
+
+        if masks is None or len(image64) == 0:
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "success": False,
+                    "count": 0,
+                    "message": "No objects found matching the description.",
+                },
+            )
 
         return JSONResponse(
             status_code=200,
@@ -195,37 +182,48 @@ async def segment_text(
                 "success": True,
                 "image64": image64,
                 "masks": masks.tolist(),
-                "shape": shape
-            }
+                "shape": shape,
+            },
         )
 
     except (UnidentifiedImageError, OSError, ValueError, RuntimeError) as e:
-        print(e)
+        print(f"Error in segment_text: {e}")
         return JSONResponse(
-            status_code=500,
-            content={
-                "success": False,
-                "error": str(e)
-            }
+            status_code=500, content={"success": False, "error": str(e)}
         )
 
+
 def segment_with_text(image_pil, description):
+    if SAM3_PROCESSOR is None:
+        raise RuntimeError("SAM3 processor is not initialized.")
+
     with torch.autocast("cuda", dtype=torch.bfloat16):
         inference_state = SAM3_PROCESSOR.set_image(image_pil)
-        output = SAM3_PROCESSOR.set_text_prompt(state=inference_state, prompt=description)
-    
+        output = SAM3_PROCESSOR.set_text_prompt(
+            state=inference_state, prompt=description
+        )
+
     image64 = []
 
-    masks, boxes, scores = output["masks"], output["boxes"], output["scores"]
-    
-    m = output["masks"]
+    masks = output.get("masks", [])
+
+    m = masks
     print(m)
     print("type(output['masks']):", type(m))
 
     if hasattr(m, "shape"):
         print("output['masks'].shape:", m.shape, "dtype:", getattr(m, "dtype", None))
 
+    if (
+        masks is None
+        or len(masks) == 0
+        or (hasattr(masks, "shape") and (masks.shape[0] == 0 or masks.numel() == 0))
+    ):
+        return [], None, (image_pil.height, image_pil.width)
+
     mask_np = masks[0].squeeze().detach().cpu().numpy()
+    if mask_np.size == 0 or not np.any(mask_np):
+        return [], None, (image_pil.height, image_pil.width)
 
     masks = mask_np.astype(np.uint8)
 
@@ -240,12 +238,11 @@ def segment_with_text(image_pil, description):
 
     return image64, masks, shape
 
+
 @app.post("/segment_points")
 async def segment_points(
-    image_path: str = Form(...),
-    ppoints: str = Form(...),
-    npoints: str = Form(...)
-    ):
+    image_path: str = Form(...), ppoints: str = Form(...), npoints: str = Form(...)
+):
     try:
         image_pil = Image.open(image_path)
         image_pil = ImageOps.exif_transpose(image_pil).convert("RGB")
@@ -255,37 +252,49 @@ async def segment_points(
 
         image64, masks, shape = segment_with_points(image_pil, ppoints, npoints)
 
+        if masks is None or len(image64) == 0:
+            return JSONResponse(
+                status_code=200,
+                content={"success": False, "count": 0, "message": "No objects found."},
+            )
+
         return JSONResponse(
             status_code=200,
             content={
                 "success": True,
                 "image64": image64,
                 "masks": masks.tolist(),
-                "shape": shape
-            }
+                "shape": shape,
+            },
         )
 
-    except (UnidentifiedImageError, OSError, ValueError, KeyError, json.JSONDecodeError, RuntimeError) as e:
-        print(e)
+    except (
+        UnidentifiedImageError,
+        OSError,
+        ValueError,
+        KeyError,
+        json.JSONDecodeError,
+        RuntimeError,
+    ) as e:
+        print(f"Error in segment_points: {e}")
         return JSONResponse(
-            status_code=500,
-            content={
-                "success": False,
-                "error": str(e)
-            }
+            status_code=500, content={"success": False, "error": str(e)}
         )
 
 
 def segment_with_points(image_pil, ppoints, npoints):
+    if SAM3_TRACKER_PROCESSOR is None or SAM3_TRACKER_MODEL is None:
+        raise RuntimeError("SAM3 tracker model or processor is not initialized.")
+
     input_point = []
     input_label = []
     for p in ppoints:
-        input_point.append([p["x"],p["y"]])
+        input_point.append([p["x"], p["y"]])
         input_label.append(1)
     for p in npoints:
-        input_point.append([p["x"],p["y"]])
+        input_point.append([p["x"], p["y"]])
         input_label.append(0)
-    
+
     input_point = np.array([[input_point]])
     input_label = np.array([[input_label]])
 
@@ -293,18 +302,18 @@ def segment_with_points(image_pil, ppoints, npoints):
         image_pil,
         input_points=input_point,
         input_labels=input_label,
-        return_tensors="pt"
+        return_tensors="pt",
     ).to(SAM3_TRACKER_MODEL.device)
 
     with torch.no_grad():
         outputs = SAM3_TRACKER_MODEL(**inputs, multimask_output=False)
-    
+
     image64 = []
 
-    masks = SAM3_TRACKER_PROCESSOR.post_process_masks(outputs.pred_masks.cpu(), inputs["original_sizes"])[0]
+    masks = SAM3_TRACKER_PROCESSOR.post_process_masks(
+        outputs.pred_masks.cpu(), inputs["original_sizes"]
+    )[0]
 
-
-    
     m = masks
     print(m)
     print("type(output['masks']):", type(m))
@@ -312,7 +321,16 @@ def segment_with_points(image_pil, ppoints, npoints):
     if hasattr(m, "shape"):
         print("output['masks'].shape:", m.shape, "dtype:", getattr(m, "dtype", None))
 
+    if (
+        masks is None
+        or len(masks) == 0
+        or (hasattr(masks, "shape") and (masks.shape[0] == 0 or masks.numel() == 0))
+    ):
+        return [], None, (image_pil.height, image_pil.width)
+
     mask_np = masks[0].squeeze().detach().cpu().numpy()
+    if mask_np.size == 0 or not np.any(mask_np):
+        return [], None, (image_pil.height, image_pil.width)
 
     masks = mask_np.astype(np.uint8)
 
@@ -326,6 +344,7 @@ def segment_with_points(image_pil, ppoints, npoints):
     image64.append(img_str)
 
     return image64, masks, shape
+
 
 @app.get("/")
 async def root():

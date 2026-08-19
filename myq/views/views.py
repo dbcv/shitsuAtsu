@@ -1,9 +1,10 @@
-# myq/views.py
 import logging
 
 from celery.exceptions import CeleryError
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.db import DatabaseError, transaction
@@ -18,13 +19,24 @@ from ..forms import SimpleSignUpForm
 from ..models import Photo, SegmentedPhoto
 from ..tasks import analyze_material, crop
 
+
 logger = logging.getLogger(__name__)
+
+
+class CustomLoginView(LoginView):
+    template_name = "myq/login.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["support_email"] = getattr(settings, "SUPPORT_EMAIL", "")
+        return context
 
 
 class SignUpView(generic.CreateView):
     form_class = SimpleSignUpForm
     success_url = reverse_lazy("login")
     template_name = "myq/signup.html"
+
 
 
 class PhotoUploadView(LoginRequiredMixin, TemplateView):
@@ -87,7 +99,11 @@ def save_segmented_image(request):
 
     try:
         segmented_photo = SegmentedPhoto(
-            original_photo=original_photo, owner=original_photo.owner
+            original_photo=original_photo,
+            owner=original_photo.owner,
+            roughness=original_photo.roughness,
+            metalness=original_photo.metalness,
+            albedo=original_photo.albedo,
         )
         segmented_photo.save()
 

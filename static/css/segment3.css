@@ -223,3 +223,206 @@ button:active {
     font-size: 1.23rem;
     color: white;
 }
+
+/* ダイアログスタイル */
+.segment-dialog {
+    border: none;
+    border-radius: 4px;
+    padding: 0;
+    background: transparent;
+    max-width: min(440px, calc(100vw - 28px));
+    width: 100%;
+    margin: auto;
+    color: #e0e0e0;
+    box-sizing: border-box;
+}
+
+.segment-dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+.segment-dialog .dialog-card {
+    background-color: #141414;
+    border: 1px solid #333333;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7);
+}
+
+.segment-dialog .dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid #242424;
+}
+
+.segment-dialog .dialog-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: 0.02em;
+}
+
+.segment-dialog .dialog-close-icon {
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: #a0a0a0;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 2px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.segment-dialog .dialog-close-icon:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.segment-dialog .dialog-body {
+    padding: 18px 20px;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.segment-dialog .dialog-desc {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #f0f0f0;
+    font-weight: 500;
+    word-break: auto-phrase;
+    overflow-wrap: break-word;
+    line-break: strict;
+}
+
+.segment-dialog .dialog-guide-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.segment-dialog .dialog-guide-item {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 0.88rem;
+    color: #cccccc;
+}
+
+.segment-dialog .guide-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 82px;
+    text-align: center;
+}
+
+.segment-dialog .badge-p-pen {
+    background-color: rgba(0, 102, 255, 0.18);
+    color: #f0f0f0;
+    border: 1px solid white;
+}
+
+.segment-dialog .badge-n-pen {
+    background-color: rgba(255, 59, 48, 0.18);
+    color: #f0f0f0;
+    border: 1px solid white;
+}
+
+.segment-dialog .badge-eraser {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #f0f0f0;
+    border: 1px solid white;
+}
+
+.segment-dialog .badge-save {
+    background-color: #f0f0f0;
+    color: #121212;
+    border: 1px solid black;
+}
+
+.segment-dialog .guide-desc {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.5;
+    color: #cccccc;
+    word-break: auto-phrase;
+    overflow-wrap: break-word;
+    line-break: strict;
+}
+
+.segment-dialog budoux-ja {
+    display: inline;
+    word-break: auto-phrase;
+    overflow-wrap: break-word;
+}
+
+.segment-dialog .dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 12px 20px 16px;
+    border-top: 1px solid #242424;
+}
+
+.segment-dialog .dialog-btn-close {
+    background-color: #e0e0e0;
+    color: #000000;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 24px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.segment-dialog .dialog-btn-close:hover {
+    background-color: #b8b8b8;
+}
+
+.segment-dialog .dialog-btn-close:active {
+    opacity: 0.85;
+}
+
+@media (max-width: 380px) {
+
+    .segment-dialog .dialog-header,
+    .segment-dialog .dialog-body,
+    .segment-dialog .dialog-footer {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .segment-dialog .dialog-guide-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+    }
+
+    .segment-dialog .guide-desc {
+        padding-left: 2px;
+    }
+}

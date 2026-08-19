@@ -142,7 +142,7 @@ saveButton.addEventListener('click', () => {
     const csrfToken = document.getElementById('csrf-token-input').value;
     const roughness = window.modelMaterials[0].roughness;
     const metalness = window.modelMaterials[0].metalness;
-    const albedo = window.modelMaterials[0].color.getHexString();
+    const albedo = '#' + window.modelMaterials[0].color.getHexString();
 
     const data = {
         photo_uuid: objectuuid,

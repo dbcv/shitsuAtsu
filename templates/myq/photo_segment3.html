@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{% static_ts 'css/segment3.css' %}">
 {% endblock %}
 {% block unique_js %}
+<script src="https://unpkg.com/budoux/bundle/budoux-ja.min.js"></script>
 <script>
     const objectuuid = '{{ object.uuid }}'
     const imageURL = "{{ object.get_image_url }}"
@@ -30,7 +31,9 @@
         <button id="n-pen">{% svg 'do_not_disturb_on' %}<span>範囲外マーカー</span></button>
         <button id="eraser">{% svg 'ink_eraser' %}<span>マーカー消去</span></button>
     </div>
-    <div id="timerCommentWrapper"><div id="timerComment"></div></div>
+    <div id="timerCommentWrapper">
+        <div id="timerComment"></div>
+    </div>
     <div id="timerBar" class="timerBar">
         <div class="ring" data-index="1">
             <svg viewBox="0 0 100 100">
@@ -60,6 +63,42 @@
         <button id="edit-gounity" style="display: none;">次の工程に進む</button>
     </div>
 </div>
+
+<dialog id="no-detection-dialog" class="segment-dialog">
+    <div class="dialog-card">
+        <div class="dialog-header">
+            <h3 class="dialog-title">セグメンテーションタスク</h3>
+            <button type="button" class="dialog-close-icon" id="close-no-detection-icon-btn"
+                aria-label="閉じる">&times;</button>
+        </div>
+        <div class="dialog-body">
+            <p class="dialog-desc">
+                <budoux-ja>マーカーを配置して対象を切り抜いてください。</budoux-ja>
+            </p>
+            <ul class="dialog-guide-list">
+                <li class="dialog-guide-item">
+                    <span class="guide-badge badge-p-pen">範囲内マーカー</span>
+                    <span class="guide-desc"><budoux-ja>切り抜き対象上に配置します</budoux-ja></span>
+                </li>
+                <li class="dialog-guide-item">
+                    <span class="guide-badge badge-n-pen">範囲外マーカー</span>
+                    <span class="guide-desc"><budoux-ja>切り抜き対象外に配置します</budoux-ja></span>
+                </li>
+                <li class="dialog-guide-item">
+                    <span class="guide-badge badge-eraser">マーカー消去</span>
+                    <span class="guide-desc"><budoux-ja>配置したマーカーを消去します</budoux-ja></span>
+                </li>
+                <li class="dialog-guide-item">
+                    <span class="guide-badge badge-save">確定して次へ</span>
+                    <span class="guide-desc"><budoux-ja>切り抜き結果を保存して次に進みます</budoux-ja></span>
+                </li>
+            </ul>
+        </div>
+        <div class="dialog-footer">
+            <button type="button" class="dialog-btn-close" id="close-no-detection-btn">OK</button>
+        </div>
+    </div>
+</dialog>
 
 <input type="hidden" id="csrf-token-input" value="{{ csrf_token }}">
 

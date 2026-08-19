@@ -1,7 +1,7 @@
 [project]
 name = "shitsuatsu"
 version = "0.1.0"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 
 dependencies = [
     "pillow>=11.3.0",
@@ -10,7 +10,7 @@ dependencies = [
     "pycocotools>=2.0.11",
     "psutil<7",
     "sam3",
-    "django>=4.2.30",
+    "django>=6.1",
     "dj-svg>=0.3.1",
     "psycopg[binary]>=3.2.13",
     "django-environ>=0.13.0",
@@ -21,7 +21,6 @@ dependencies = [
     "redis>=7.0.1",
     "django-celery-results>=2.6.0",
     "django-redis>=6.0.0",
-    "django-celery-beat>=2.9.0",
     "requests>=2.32.5",
     "transformers>=4.57.6",
     "fastapi>=0.128.8",

@@ -305,6 +305,9 @@ function rgbToLab(r, g, b) {
 
 
 function initColorPicker(albedo) {
+    if (albedo && !albedo.startsWith('#')) {
+        albedo = '#' + albedo;
+    }
     console.log(`initColorPicker called with albedo: ${albedo}`); // albedo is a hex string like "#4b3c64"
 
     const initialLab = rgbToLab(

@@ -73,6 +73,15 @@ def segment_image_api2(request):
                 original_photo.image.path, ppoints, npoints
             )
 
+        if image64 is None or masks is None or len(image64) == 0:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "count": 0,
+                    "message": "マーカーを配置して対象を切り抜いてください",
+                }
+            )
+
         packed = np.packbits(masks)
         compressed = zlib.compress(packed.tobytes())
         encoded = base64.b64encode(compressed).decode()
@@ -108,6 +117,8 @@ def segment_with_text_requests(image_path, description):
 
     if response.status_code == 200:
         data = response.json()
+        if not data.get("success", False):
+            return None, None, None
         return data["image64"], data["masks"], data["shape"]
     else:
         raise RuntimeError(f"API error: {response.status_code} {response.text}")
@@ -125,6 +136,8 @@ def segment_with_points(image_path, ppoints, npoints):
 
     if response.status_code == 200:
         data = response.json()
+        if not data.get("success", False):
+            return None, None, None
         return data["image64"], data["masks"], data["shape"]
     else:
         raise RuntimeError(f"API error: {response.status_code} {response.text}")
