@@ -91,10 +91,10 @@ button.delete-button {
 
 /* モーダルスタイル */
 .image-modal {
-    border: 1px solid #2a2a35;
+    border: none;
     padding: 0;
-    background: #121212;
-    color: #ffffff;
+    background: #ffffff;
+    color: #000;
     max-width: 90vw;
     max-height: 90vh;
     width: 520px;
@@ -102,7 +102,7 @@ button.delete-button {
 }
 
 .image-modal::backdrop {
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.2);
     backdrop-filter: blur(2px);
 }
 
@@ -117,23 +117,49 @@ button.delete-button {
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    background: #121212;
+    background: #ffffff;
 }
 
 .image-modal-title {
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: #ffffff;
+    color: #000000;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
+.modal-view-toggle {
+    display: inline-flex;
+    background: #f1f5f9;
+    border-radius: 20px;
+    padding: 3px;
+    gap: 2px;
+}
+
+.view-toggle-btn {
+    border: none;
+    background: transparent;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 16px;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.view-toggle-btn.active {
+    background: #1e293b;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 .modal-close-icon {
     background: none;
     border: none;
-    color: #9ca3af;
+    color: #000000;
     font-size: 1.5rem;
     cursor: pointer;
     padding: 0 4px;
@@ -142,15 +168,16 @@ button.delete-button {
 }
 
 .modal-close-icon:hover {
-    color: #ffffff;
+    color: #000000;
 }
 
 .image-modal-body {
     padding: 16px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: #121212;
+    background: #ffffff;
     overflow: auto;
 }
 
@@ -159,14 +186,54 @@ button.delete-button {
     align-items: center;
     justify-content: center;
     width: 100%;
-    max-height: 60vh;
+    max-height: 55vh;
 }
 
 .modal-preview-img {
     max-width: 100%;
-    max-height: 60vh;
+    max-height: 55vh;
     object-fit: contain;
-    border-radius: 2px;
+    border-radius: 1rem;
+}
+
+.modal-param-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 6px 14px;
+    background: #f8fafc;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+}
+
+.param-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    color: #334155;
+}
+
+.param-label {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.param-val {
+    font-weight: 600;
+    font-family: monospace;
+}
+
+.param-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
 }
 
 .image-modal-footer {
@@ -174,7 +241,7 @@ button.delete-button {
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    background: #121212;
+    background: #ffffff;
     gap: 12px;
 }
 

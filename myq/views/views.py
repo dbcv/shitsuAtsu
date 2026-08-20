@@ -19,7 +19,6 @@ from ..forms import SimpleSignUpForm
 from ..models import Photo, SegmentedPhoto
 from ..tasks import analyze_material, crop
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -36,7 +35,6 @@ class SignUpView(generic.CreateView):
     form_class = SimpleSignUpForm
     success_url = reverse_lazy("login")
     template_name = "myq/signup.html"
-
 
 
 class PhotoUploadView(LoginRequiredMixin, TemplateView):

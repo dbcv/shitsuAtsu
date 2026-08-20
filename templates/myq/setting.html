@@ -22,7 +22,13 @@
 <h3>プロフィール情報</h3>
 <form method="post" id="profile">
   {% csrf_token %}
-  {{ profile_form.as_table }}
+  {% for field in profile_form %}
+    {{ field.label_tag }}
+    {{ field }}
+    {% if field.errors %}
+      <div class="field-error">{{ field.errors }}</div>
+    {% endif %}
+  {% endfor %}
   <button type="submit" name="update_profile">更新</button>
 </form>
 

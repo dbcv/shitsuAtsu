@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import AccessLog, Photo, SegmentedPhoto
+from .models import AccessLog, Photo, Profile, SegmentedPhoto
 
 
 @admin.register(AccessLog)
@@ -52,7 +52,26 @@ class SegmentedPhotoAdmin(admin.ModelAdmin):
     search_fields = ("owner__username",)
 
 
+class ProfileInline(admin.StackedInline):
+    model = Profile
+    can_delete = False
+    verbose_name_plural = "プロフィール情報"
+    fk_name = "user"
+
+
 class CustomUserAdmin(UserAdmin):
+    inlines = (ProfileInline,)
+
+    @admin.display(description="年齢")
+    def get_age(self, obj):
+        profile = getattr(obj, "profile", None)
+        return profile.age if profile and profile.age is not None else "-"
+
+    @admin.display(description="性別")
+    def get_gender(self, obj):
+        profile = getattr(obj, "profile", None)
+        return profile.get_gender_display() if profile and profile.gender else "-"
+
     def photos_link(self, obj):
         url = reverse("admin:myq_photo_changelist") + f"?owner__id__exact={obj.id}"
 
@@ -68,6 +87,8 @@ class CustomUserAdmin(UserAdmin):
 
     list_display = (
         *UserAdmin.list_display,
+        "get_age",
+        "get_gender",
         "photos_link",
         "segmented_link",
     )

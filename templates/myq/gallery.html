@@ -36,11 +36,17 @@
             {% for seg_photo in segmented_photos %}
             <div class="gallery-item" id="photo-{{ seg_photo.uuid }}">
                 <button type="button" class="gallery-item-btn" data-uuid="{{ seg_photo.uuid }}" data-type="segmented"
-                    data-preview-url="{{ seg_photo.get_image_url_256 }}"
+                    data-preview-url="{{ seg_photo.get_rendered_image_url_256 }}"
+                    data-rendered-url="{{ seg_photo.get_rendered_image_url_256 }}"
+                    data-cutout-url="{{ seg_photo.get_image_url_256 }}"
+                    data-has-rendered="{% if seg_photo.rendered_image %}true{% else %}false{% endif %}"
+                    data-roughness="{{ seg_photo.roughness|floatformat:2 }}"
+                    data-metalness="{{ seg_photo.metalness|floatformat:2 }}"
+                    data-albedo="{{ seg_photo.albedo }}"
                     data-edit-url="{% url 'reflectance_view' uuid=seg_photo.uuid %}"
                     data-title="{{ seg_photo|default:'切り抜き画像' }}"
                     aria-label="{{ seg_photo|default:'切り抜き画像' }}のプレビューを開く">
-                    <img src="{{ seg_photo.get_image_url_256 }}" alt="{{ seg_photo }}" loading="lazy">
+                    <img src="{{ seg_photo.get_rendered_image_url_256 }}" alt="{{ seg_photo }}" loading="lazy">
                 </button>
             </div>
             {% empty %}
@@ -55,11 +61,30 @@
     <div class="image-modal-card">
         <div class="image-modal-header">
             <h3 id="modal-title" class="image-modal-title">画像プレビュー</h3>
+            <div id="modal-view-toggle" class="modal-view-toggle" style="display: none;">
+                <button type="button" class="view-toggle-btn active" id="toggle-rendered-btn">質感再現</button>
+                <button type="button" class="view-toggle-btn" id="toggle-cutout-btn">切り抜き</button>
+            </div>
             <button type="button" id="modal-close-icon" class="modal-close-icon" aria-label="閉じる">&times;</button>
         </div>
         <div class="image-modal-body">
             <div class="image-preview-wrapper">
                 <img id="modal-preview-img" src="" alt="プレビュー" class="modal-preview-img">
+            </div>
+            <div id="modal-param-info" class="modal-param-info" style="display: none;">
+                <div class="param-chip">
+                    <span class="param-label">粗さ:</span>
+                    <span id="param-roughness" class="param-val">0.00</span>
+                </div>
+                <div class="param-chip">
+                    <span class="param-label">金属度:</span>
+                    <span id="param-metalness" class="param-val">0.00</span>
+                </div>
+                <div class="param-chip">
+                    <span class="param-label">色:</span>
+                    <span id="param-albedo-swatch" class="param-swatch"></span>
+                    <span id="param-albedo" class="param-val">#FFFFFF</span>
+                </div>
             </div>
         </div>
         <div class="image-modal-footer">
@@ -112,23 +137,80 @@
     const modalCloseIcon = document.getElementById('modal-close-icon');
     const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
+    const modalViewToggle = document.getElementById('modal-view-toggle');
+    const toggleRenderedBtn = document.getElementById('toggle-rendered-btn');
+    const toggleCutoutBtn = document.getElementById('toggle-cutout-btn');
+    const modalParamInfo = document.getElementById('modal-param-info');
+    const paramRoughness = document.getElementById('param-roughness');
+    const paramMetalness = document.getElementById('param-metalness');
+    const paramAlbedo = document.getElementById('param-albedo');
+    const paramAlbedoSwatch = document.getElementById('param-albedo-swatch');
+
     let currentItem = {
         uuid: null,
-        type: null
+        type: null,
+        renderedUrl: null,
+        cutoutUrl: null,
+        hasRendered: false
     };
 
     function openModal(button) {
         currentItem.uuid = button.dataset.uuid;
         currentItem.type = button.dataset.type;
+        currentItem.renderedUrl = button.dataset.renderedUrl || button.dataset.previewUrl;
+        currentItem.cutoutUrl = button.dataset.cutoutUrl || button.dataset.previewUrl;
+        currentItem.hasRendered = button.dataset.hasRendered === 'true';
 
         modalTitle.textContent = "";
         modalPreviewImg.src = button.dataset.previewUrl;
         modalPreviewImg.alt = button.dataset.title || 'プレビュー';
         modalEditLink.href = button.dataset.editUrl;
 
+        if (currentItem.type === 'segmented') {
+            if (currentItem.hasRendered) {
+                modalViewToggle.style.display = 'flex';
+                toggleRenderedBtn.classList.add('active');
+                toggleCutoutBtn.classList.remove('active');
+            } else {
+                modalViewToggle.style.display = 'none';
+            }
+
+            if (button.dataset.roughness !== undefined) {
+                modalParamInfo.style.display = 'flex';
+                paramRoughness.textContent = button.dataset.roughness;
+                paramMetalness.textContent = button.dataset.metalness;
+                const albedoVal = button.dataset.albedo || '#FFFFFF';
+                paramAlbedo.textContent = albedoVal;
+                paramAlbedoSwatch.style.backgroundColor = albedoVal;
+            } else {
+                modalParamInfo.style.display = 'none';
+            }
+        } else {
+            modalViewToggle.style.display = 'none';
+            modalParamInfo.style.display = 'none';
+        }
+
         if (modal && typeof modal.showModal === 'function') {
             modal.showModal();
         }
+    }
+
+    if (toggleRenderedBtn && toggleCutoutBtn) {
+        toggleRenderedBtn.addEventListener('click', function () {
+            toggleRenderedBtn.classList.add('active');
+            toggleCutoutBtn.classList.remove('active');
+            if (currentItem.renderedUrl) {
+                modalPreviewImg.src = currentItem.renderedUrl;
+            }
+        });
+
+        toggleCutoutBtn.addEventListener('click', function () {
+            toggleCutoutBtn.classList.add('active');
+            toggleRenderedBtn.classList.remove('active');
+            if (currentItem.cutoutUrl) {
+                modalPreviewImg.src = currentItem.cutoutUrl;
+            }
+        });
     }
 
     function closeModal() {

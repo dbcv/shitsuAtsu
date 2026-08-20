@@ -5,7 +5,7 @@ import uuid
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
-from django.db import models
+from django.db import DatabaseError, models
 from django.urls import reverse
 from django.utils import timezone
 
@@ -28,6 +28,11 @@ def upload_to_segmented_path(instance, filename):
 def upload_to_npy_path(instance, filename):
     ext = os.path.splitext(filename)[1]
     return f"photos/{instance.owner.username}/npy/{uuid.uuid4()}{ext}"
+
+
+def upload_to_rendered_path(instance, filename):
+    ext = os.path.splitext(filename)[1] or ".webp"
+    return f"photos/{instance.owner.username}/rendered/{uuid.uuid4()}{ext}"
 
 
 class Photo(models.Model):
@@ -148,6 +153,12 @@ class SegmentedPhoto(models.Model):
     image = models.ImageField(
         verbose_name="切り抜き画像", upload_to=upload_to_segmented_path
     )
+    rendered_image = models.ImageField(
+        verbose_name="質感再現画像",
+        upload_to=upload_to_rendered_path,
+        blank=True,
+        null=True,
+    )
     created_at = models.DateTimeField(verbose_name="作成日時", auto_now_add=True)
 
     # Reflection parameters
@@ -193,10 +204,50 @@ class SegmentedPhoto(models.Model):
             kwargs={"uuid": self.uuid, "width": 64, "ext": "webp"},
         )
 
+    @property
+    def has_rendered_image(self):
+        try:
+            return bool(self.rendered_image)
+        except (models.FieldDoesNotExist, AttributeError, DatabaseError, OSError):
+            return False
+
+    def get_rendered_image_url(self):
+        if self.has_rendered_image:
+            return reverse(
+                "serve_rendered_photo", kwargs={"uuid": self.uuid, "ext": "webp"}
+            )
+        return self.get_image_url()
+
+    def get_rendered_image_url_256(self):
+        if self.has_rendered_image:
+            return reverse(
+                "serve_rendered_photo",
+                kwargs={"uuid": self.uuid, "width": 256, "ext": "webp"},
+            )
+        return self.get_image_url_256()
+
+    def get_rendered_image_url_64(self):
+        if self.has_rendered_image:
+            return reverse(
+                "serve_rendered_photo",
+                kwargs={"uuid": self.uuid, "width": 64, "ext": "webp"},
+            )
+        return self.get_image_url_64()
+
     def delete(self, *args, **kwargs):
-        storage, path = self.image.storage, self.image.path
+        if self.image:
+            try:
+                storage, path = self.image.storage, self.image.path
+                storage.delete(path)
+            except (OSError, ValueError):
+                pass
+        if self.has_rendered_image:
+            try:
+                storage, path = self.rendered_image.storage, self.rendered_image.path
+                storage.delete(path)
+            except (OSError, ValueError):
+                pass
         res = super().delete(*args, **kwargs)
-        storage.delete(path)
         return res
 
 

@@ -51,9 +51,29 @@ class SimpleSignUpForm(forms.ModelForm):
 
 
 class ProfileForm(forms.ModelForm):
+    email = forms.EmailField(
+        label="メールアドレス",
+        required=False,
+    )
+
     class Meta:
         model = Profile
-        fields = ("age", "gender")
+        fields = ("email", "age", "gender")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["age"].label = "年齢"
+        self.fields["gender"].label = "性別"
+        if self.instance and hasattr(self.instance, "user") and self.instance.user:
+            self.fields["email"].initial = self.instance.user.email
+
+    def save(self, commit=True):
+        profile = super().save(commit=commit)
+        if "email" in self.cleaned_data:
+            profile.user.email = self.cleaned_data["email"]
+            if commit:
+                profile.user.save()
+        return profile
 
 
 import re

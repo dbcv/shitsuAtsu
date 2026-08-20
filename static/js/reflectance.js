@@ -13,7 +13,8 @@ const camera = new THREE.PerspectiveCamera(60, window.innerWidth / (window.inner
 camera.position.set(0, -3, 10)
 
 const renderer = new THREE.WebGLRenderer({
-    antialias: true
+    antialias: true,
+    alpha: true
 })
 
 // closedBy dialog Polyfill
@@ -139,19 +140,47 @@ const saveButton = document.getElementById('save-button');
 
 
 saveButton.addEventListener('click', () => {
+    saveButton.disabled = true;
     const csrfToken = document.getElementById('csrf-token-input').value;
-    const roughness = window.modelMaterials[0].roughness;
-    const metalness = window.modelMaterials[0].metalness;
-    const albedo = '#' + window.modelMaterials[0].color.getHexString();
+    const roughness = window.modelMaterials?.[0]?.roughness ?? 0.0;
+    const metalness = window.modelMaterials?.[0]?.metalness ?? 0.0;
+    const albedo = window.modelMaterials?.[0]?.color
+        ? '#' + window.modelMaterials[0].color.getHexString()
+        : '#FFFFFF';
+
+    // 1. ユーザーの現在のカメラ状態と背景を一時退避
+    const savedPos = camera.position.clone();
+    const savedTarget = controls.target.clone();
+    const savedBg = scene.background;
+
+    // 2. キャプチャ用の統一アングル・透過背景に設定
+    camera.position.set(0, -3, 10);
+    controls.target.set(0, 0, 0);
+    camera.lookAt(0, 0, 0);
+    camera.updateProjectionMatrix();
+
+    // 透過背景（環境光・反射 scene.environment は有効のまま）
+    scene.background = null;
+
+    // レンダリングして WebP 形式のキャプチャを取得
+    renderer.render(scene, camera);
+    const captureDataUrl = renderer.domElement.toDataURL('image/webp', 0.85);
+
+    // 3. ユーザーの操作状態を復元
+    camera.position.copy(savedPos);
+    controls.target.copy(savedTarget);
+    scene.background = savedBg;
+    renderer.render(scene, camera);
 
     const data = {
         photo_uuid: objectuuid,
         roughness: roughness,
         metalness: metalness,
-        albedo: albedo
+        albedo: albedo,
+        capture_image: captureDataUrl
     };
 
-    console.log('Saving reflectance parameters:', data);
+    console.log('Saving reflectance parameters and capture preview...');
 
     fetch(api_save_reflectance_URL, {
         method: 'POST',
@@ -168,6 +197,8 @@ saveButton.addEventListener('click', () => {
         })
         .catch((error) => {
             console.error('Error:', error);
+            alert('保存処理中に通信エラーが発生しました。');
+            saveButton.disabled = false;
         });
 });
 

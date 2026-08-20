@@ -5,7 +5,11 @@ from .views.autoLogin import auto_login_view
 from .views.gallery import PhotoGallery2View, PhotoGallery3View, PhotoGalleryView
 from .views.homemenu import Home3View, Start3View
 from .views.iconserve import faviconserve
-from .views.photoserve import serve_photo2, serve_segmented_photo2
+from .views.photoserve import (
+    serve_photo2,
+    serve_rendered_photo2,
+    serve_segmented_photo2,
+)
 from .views.reflectance import ThreeView, register_reflectance
 from .views.segment import PhotoSegment3View, segment_image_api2
 from .views.views import PhotoUploadView, delete_image_api, save_segmented_image
@@ -29,6 +33,11 @@ urlpatterns = [
         r"^segmented_photos/(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:-(?P<width>\d+))?\.(?P<ext>jpg|jpeg|png|webp)$",
         serve_segmented_photo2,
         name="serve_segmented_photo",
+    ),
+    re_path(
+        r"^rendered_photos/(?P<uuid>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})(?:-(?P<width>\d+))?\.(?P<ext>jpg|jpeg|png|webp)$",
+        serve_rendered_photo2,
+        name="serve_rendered_photo",
     ),
     path("gallery/", PhotoGalleryView.as_view(), name="photo_gallery"),
     path("gallery2/", PhotoGallery2View.as_view(), name="photo_gallery2"),

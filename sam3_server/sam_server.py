@@ -3,6 +3,7 @@
 import base64
 import io
 import json
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -144,9 +145,10 @@ async def lifespan(app: FastAPI):
 
     sam3_model = build_sam3_image_model(bpe_path=str(bpe_path))
 
+    hf_token = os.environ.get("HF_TOKEN")
     SAM3_PROCESSOR = Sam3Processor(sam3_model)
-    SAM3_TRACKER_MODEL = Sam3TrackerModel.from_pretrained("facebook/sam3").to(device)
-    SAM3_TRACKER_PROCESSOR = Sam3TrackerProcessor.from_pretrained("facebook/sam3")
+    SAM3_TRACKER_MODEL = Sam3TrackerModel.from_pretrained("facebook/sam3", token=hf_token).to(device)
+    SAM3_TRACKER_PROCESSOR = Sam3TrackerProcessor.from_pretrained("facebook/sam3", token=hf_token)
 
     print("--- SAM3 Model Loaded Successfully ---")
 

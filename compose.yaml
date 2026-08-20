@@ -38,6 +38,8 @@ services:
       - .:/app
       - /app/.venv
       - huggingface_cache:/root/.cache/huggingface
+    env_file:
+      - .env.docker
     environment:
       HF_HOME: /root/.cache/huggingface
       PYTHONPATH: /app

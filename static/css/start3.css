@@ -59,6 +59,12 @@
     }
 }
 
+@supports (width: stretch) {
+    #description-input {
+        width: stretch !important;
+    }
+}
+
 #start-caution {
     container-type: inline-size;
     container-name: start-caution;
@@ -69,6 +75,19 @@
         align-items: center;
         gap: 10px;
         font-size: 0.9rem;
+
+        &>div:has(#description-input) {
+            width: 95%;
+            max-width: 20rem;
+
+            &>input {
+                width: 90%;
+                padding: 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                font-size: max(1rem, 16px);
+            }
+        }
     }
 
     &>#start-caution-content02 {
