@@ -20,9 +20,8 @@ def _resize_and_serve_image(image_path, width=0, ext="webp"):
             ext.upper() if ext.lower() in ["jpg", "jpeg", "png", "webp"] else "WEBP"
         )
 
-        has_alpha = (
-            img.mode in ("RGBA", "LA")
-            or (img.mode == "P" and "transparency" in img.info)
+        has_alpha = img.mode in ("RGBA", "LA") or (
+            img.mode == "P" and "transparency" in img.info
         )
 
         if has_alpha and img_format in ("PNG", "WEBP"):
@@ -53,7 +52,11 @@ def _resize_and_serve_image(image_path, width=0, ext="webp"):
 
 @login_required
 def serve_photo2(request, uuid, width=0, ext="png"):
-    photo = get_object_or_404(Photo, uuid=uuid, owner=request.user)
+    if request.user.is_staff or request.user.is_superuser:
+        photo = get_object_or_404(Photo, uuid=uuid)
+    else:
+        photo = get_object_or_404(Photo, uuid=uuid, owner=request.user)
+
     try:
         return _resize_and_serve_image(photo.image.path, width=width, ext=ext)
     except FileNotFoundError:
@@ -65,10 +68,16 @@ def serve_photo2(request, uuid, width=0, ext="png"):
 
 @login_required
 def serve_segmented_photo2(request, uuid, width=0, ext="png"):
+    kwargs = {"uuid": uuid}
+    if not (request.user.is_staff or request.user.is_superuser):
+        kwargs["owner"] = request.user
+
     try:
-        segmented_photo = get_object_or_404(SegmentedPhoto, uuid=uuid, owner=request.user)
+        segmented_photo = get_object_or_404(SegmentedPhoto, **kwargs)
     except (ProgrammingError, DatabaseError):
-        segmented_photo = get_object_or_404(SegmentedPhoto.objects.defer("rendered_image"), uuid=uuid, owner=request.user)
+        segmented_photo = get_object_or_404(
+            SegmentedPhoto.objects.defer("rendered_image"), **kwargs
+        )
 
     try:
         return _resize_and_serve_image(segmented_photo.image.path, width=width, ext=ext)
@@ -81,15 +90,21 @@ def serve_segmented_photo2(request, uuid, width=0, ext="png"):
 
 @login_required
 def serve_rendered_photo2(request, uuid, width=0, ext="webp"):
+    kwargs = {"uuid": uuid}
+    if not (request.user.is_staff or request.user.is_superuser):
+        kwargs["owner"] = request.user
+
     try:
-        segmented_photo = get_object_or_404(SegmentedPhoto, uuid=uuid, owner=request.user)
+        segmented_photo = get_object_or_404(SegmentedPhoto, **kwargs)
         target_field = (
             segmented_photo.rendered_image
             if segmented_photo.has_rendered_image
             else segmented_photo.image
         )
     except (ProgrammingError, DatabaseError):
-        segmented_photo = get_object_or_404(SegmentedPhoto.objects.defer("rendered_image"), uuid=uuid, owner=request.user)
+        segmented_photo = get_object_or_404(
+            SegmentedPhoto.objects.defer("rendered_image"), **kwargs
+        )
         target_field = segmented_photo.image
 
     try:
@@ -99,5 +114,3 @@ def serve_rendered_photo2(request, uuid, width=0, ext="webp"):
     except (UnidentifiedImageError, OSError, ValueError) as e:
         logger.error("Error processing image: %s", e)
         return HttpResponse(status=500)
-
-

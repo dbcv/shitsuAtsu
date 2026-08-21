@@ -41,11 +41,11 @@
                     data-cutout-url="{{ seg_photo.get_image_url_256 }}"
                     data-has-rendered="{% if seg_photo.rendered_image %}true{% else %}false{% endif %}"
                     data-roughness="{{ seg_photo.roughness|floatformat:2 }}"
-                    data-metalness="{{ seg_photo.metalness|floatformat:2 }}"
-                    data-albedo="{{ seg_photo.albedo }}"
+                    data-metalness="{{ seg_photo.metalness|floatformat:2 }}" data-albedo="{{ seg_photo.albedo }}"
                     data-edit-url="{% url 'reflectance_view' uuid=seg_photo.uuid %}"
                     data-title="{{ seg_photo|default:'切り抜き画像' }}"
                     aria-label="{{ seg_photo|default:'切り抜き画像' }}のプレビューを開く">
+                    <img src="{{ seg_photo.get_image_url_256 }}" alt="{{ seg_photo }}" loading="lazy">
                     <img src="{{ seg_photo.get_rendered_image_url_256 }}" alt="{{ seg_photo }}" loading="lazy">
                 </button>
             </div>
