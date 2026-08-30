@@ -33,10 +33,19 @@ class LoginViewTests(SimpleTestCase):
 )
 class GalleryViewTests(SimpleTestCase):
     def test_gallery_template_renders_dialog_and_buttons(self):
+        dummy_photo = type(
+            "PhotoStub",
+            (),
+            {
+                "uuid": "00000000-0000-0000-0000-000000000001",
+                "get_image_url_256": "/media/dummy_256.jpg",
+                "title": "dummy photo",
+            },
+        )()
         rendered = render_to_string(
             "myq/gallery.html",
             {
-                "original_photos": [],
+                "original_photos": [dummy_photo],
                 "segmented_photos": [],
                 "csrf_token": "dummy_token",
             },

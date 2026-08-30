@@ -32,7 +32,7 @@
       <h3>撮影する前に</h3>
       <p>撮影対象物の詳細を入力してください。</p>
     </div>
-    <div style="margin-top: 15px; margin-bottom: 20px;">
+    <div>
       <input type="text" id="description-input" placeholder="例: 緑色の机、茶色の椅子など">
     </div>
     <div>
@@ -49,7 +49,7 @@
       <button class="start-back" popovertarget="start-caution" popovertargetaction="hide">戻る</button>
       <button class="start-go">撮影</button>
       <button class="start-device">端末内に保存されている画像から選択する</button>
-      <form id="upload-form" style="margin-bottom: 20px;">
+      <form id="upload-form">
         {% csrf_token %}
         <input type="file" id="file-input" name="image" accept="image/*" capture="environment">
       </form>

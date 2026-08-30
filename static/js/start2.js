@@ -63,32 +63,62 @@ fileInput.addEventListener('change', () => {
     uploadForm.reset();
 });
 
-document.querySelector("button#start-goto-content02").addEventListener("click", () => {
-    document.getElementById("start-caution-content01").style.display = "none";
-    document.getElementById("start-caution-content02").style.display = "flex";
-});
-
-document.querySelector("button.startButton").addEventListener("click", () => {
-    document.getElementById("start-caution-content01").style.display = "flex";
-    document.getElementById("start-caution-content02").style.display = "none";
-});
-
 const content = document.getElementById("start-caution");
 
 function centerContent() {
-  const viewportHeight = window.visualViewport.height;
-  const contentHeight = content.offsetHeight;
-  const windowHeight = window.innerHeight;
-  //console.log(`Viewport height: ${viewportHeight}, Content height: ${contentHeight}, Window height: ${windowHeight}`);
-  const top = (viewportHeight - contentHeight) / 2;
-  if (viewportHeight == windowHeight) {
-    content.style.top = `0px`;
-  } else {
-    content.style.top = `${top}px`;
-  }
+    if (!content) return;
+
+    // ポップオーバーが開いていないときは何もしない
+    if (!content.matches(':popover-open')) {
+        return;
+    }
+
+    if (window.visualViewport) {
+        const vv = window.visualViewport;
+        const viewportHeight = vv.height;
+        const windowHeight = window.innerHeight;
+
+        // 仮想キーボード等で visualViewport が大幅に縮小している場合 (innerHeight の 85% 未満)
+        if (viewportHeight < windowHeight * 0.85) {
+            const contentHeight = content.offsetHeight;
+            const top = vv.offsetTop + Math.max(10, (viewportHeight - contentHeight) / 2);
+            content.style.top = `${top}px`;
+            content.style.bottom = 'auto';
+            content.style.margin = '0 auto';
+        } else {
+            // 通常時: Popover API 標準の画面中央配置 (inset: 0; margin: auto) に委ねる
+            content.style.top = '';
+            content.style.bottom = '';
+            content.style.margin = '';
+        }
+    }
 }
 
-window.visualViewport.addEventListener("resize", centerContent);
-window.visualViewport.addEventListener("scroll", centerContent);
+document.querySelector("button#start-goto-content02")?.addEventListener("click", () => {
+    document.getElementById("start-caution-content01").style.display = "none";
+    document.getElementById("start-caution-content02").style.display = "flex";
+    requestAnimationFrame(centerContent);
+});
 
-centerContent();
+document.querySelector("button.startButton")?.addEventListener("click", () => {
+    document.getElementById("start-caution-content01").style.display = "flex";
+    document.getElementById("start-caution-content02").style.display = "none";
+    requestAnimationFrame(centerContent);
+});
+
+if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", centerContent);
+    window.visualViewport.addEventListener("scroll", centerContent);
+}
+
+if (content) {
+    content.addEventListener("toggle", (event) => {
+        if (event.newState === "open") {
+            requestAnimationFrame(centerContent);
+        } else {
+            content.style.top = '';
+            content.style.bottom = '';
+            content.style.margin = '';
+        }
+    });
+}

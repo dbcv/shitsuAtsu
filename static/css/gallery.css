@@ -135,7 +135,7 @@ button.delete-button {
 }
 
 .modal-view-toggle {
-    display: inline-flex;
+    display: none;
     border: 1px solid #000;
     overflow: hidden;
     border-bottom: none;
@@ -204,7 +204,7 @@ button.delete-button {
 }
 
 .modal-param-info {
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     flex-wrap: wrap;

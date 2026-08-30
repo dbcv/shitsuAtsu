@@ -20,6 +20,19 @@ header {
     display:none;
 }
 
+.nav-logout-form {
+    display: inline;
+}
+
+.nav-logout-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #0600ee;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 
 
 .home-footer {
