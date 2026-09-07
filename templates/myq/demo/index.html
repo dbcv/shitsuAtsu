@@ -1,0 +1,132 @@
+{% extends "myq/demo/base_demo.html" %}
+{% load static %}
+{% load static_tags %}
+
+{% block title %}素材ダッシュボード{% endblock %}
+
+{% block content %}
+<div class="demo-hero">
+  <h1>研究発表用 素材出力ダッシュボード</h1>
+  <p>全ユーザーの画像データから、SAM3セグメンテーションマスク、比較画像、回転連番PNGなどのスライド・論文用素材を出力します。</p>
+</div>
+
+<div class="demo-filters">
+  <form method="get" action="{% url 'demo_index' %}" style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; width: 100%;">
+    <select name="user" class="demo-select" onchange="this.form.submit()">
+      <option value="">全ユーザー表示 ({{ total_photos }} 件の写真)</option>
+      {% for u in all_users %}
+      <option value="{{ u.username }}" {% if selected_user == u.username %}selected{% endif %}>
+        ユーザー: {{ u.username }}
+      </option>
+      {% endfor %}
+    </select>
+
+    <input type="text" name="q" class="demo-input" placeholder="タイトルで検索..." value="{{ search_query }}" style="flex: 1; min-width: 200px;">
+    <button type="submit" class="demo-btn demo-btn-primary">検索</button>
+    {% if selected_user or search_query %}
+    <a href="{% url 'demo_index' %}" class="demo-btn demo-btn-secondary">リセット</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="demo-card" style="margin-bottom: 2rem;">
+  <div class="demo-card-header">
+    <h2 class="demo-card-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--demo-accent)"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+      全画像一覧 (クリックで素材出力デモへ)
+    </h2>
+    <span style="font-size: 0.85rem; color: var(--demo-text-muted);">表示中: {{ photos|length }} 件</span>
+  </div>
+
+  {% if photos %}
+  <div class="demo-grid">
+    {% for photo in photos %}
+    <div class="demo-photo-card">
+      <div class="demo-photo-thumb">
+        <span class="demo-photo-user">@{{ photo.owner.username }}</span>
+        <img src="{{ photo.get_image_url_256 }}" alt="{{ photo.title }}" loading="lazy">
+      </div>
+      <div class="demo-photo-body">
+        <h3 class="demo-photo-title" title="{{ photo.title }}">{{ photo.title }}</h3>
+        <p class="demo-photo-desc">{{ photo.description|default:"説明なし" }}</p>
+        
+        <div style="font-size: 0.75rem; color: var(--demo-text-muted);">
+          アップロード: {{ photo.uploaded_at|date:"Y/m/d H:i" }}
+        </div>
+
+        <div class="demo-photo-actions">
+          <a href="{% url 'demo_segment' uuid=photo.uuid %}" class="demo-btn demo-btn-accent demo-btn-sm" title="SAM3でマスク＆切り抜き素材を出力">
+            SAM3
+          </a>
+          <a href="{% url 'demo_comparison' uuid=photo.uuid %}" class="demo-btn demo-btn-primary demo-btn-sm" title="元画像・セグメント・レンダリング比較＆ZIP">
+            比較ZIP
+          </a>
+          {% with segmented=photo.segmented_images.first %}
+          {% if segmented %}
+          <a href="{% url 'demo_rotation' uuid=segmented.uuid %}" class="demo-btn demo-btn-secondary demo-btn-sm" title="360度回転連番PNGの生成">
+            3D回転
+          </a>
+          {% else %}
+          <a href="{% url 'demo_segment' uuid=photo.uuid %}" class="demo-btn demo-btn-secondary demo-btn-sm" title="まずSAM3で切り抜きを行ってください" style="opacity: 0.6;">
+            要切抜
+          </a>
+          {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align: center; padding: 3rem; color: var(--demo-text-muted);">
+    画像が見つかりませんでした。
+  </div>
+  {% endif %}
+</div>
+
+<!-- セグメント済み画像からの回転連番クイックアクセス -->
+<div class="demo-card">
+  <div class="demo-card-header">
+    <h2 class="demo-card-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#ec4899"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+      セグメント済みデータ一覧 (3D質感＆回転連番出力)
+    </h2>
+    <span style="font-size: 0.85rem; color: var(--demo-text-muted);">総セグメント数: {{ total_segmented }} 件</span>
+  </div>
+
+  {% if segmented_photos %}
+  <div class="demo-grid">
+    {% for seg in segmented_photos %}
+    <div class="demo-photo-card">
+      <div class="demo-photo-thumb" style="background: repeating-conic-gradient(#1e293b 0% 25%, #0f172a 0% 50%) 50% / 16px 16px;">
+        <span class="demo-photo-user">@{{ seg.owner.username }}</span>
+        {% if seg.image %}
+        <img src="{{ seg.get_image_url_256 }}" alt="Segmented" loading="lazy">
+        {% endif %}
+      </div>
+      <div class="demo-photo-body">
+        <h3 class="demo-photo-title">{{ seg.original_photo.title|default:"元画像削除済み" }}</h3>
+        <div style="display: flex; gap: 0.5rem; font-size: 0.75rem; color: var(--demo-accent); font-family: monospace;">
+          <span>Rough: {{ seg.roughness|floatformat:2 }}</span>
+          <span>Metal: {{ seg.metalness|floatformat:2 }}</span>
+          <span style="display: inline-flex; align-items: center; gap: 3px;">
+            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: {{ seg.albedo }};"></span>
+            {{ seg.albedo }}
+          </span>
+        </div>
+        <div class="demo-photo-actions" style="grid-template-columns: 1fr;">
+          <a href="{% url 'demo_rotation' uuid=seg.uuid %}" class="demo-btn demo-btn-accent demo-btn-sm">
+            質感調整＆360度回転連番出力へ
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align: center; padding: 2rem; color: var(--demo-text-muted);">
+    セグメント済みデータはありません。
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

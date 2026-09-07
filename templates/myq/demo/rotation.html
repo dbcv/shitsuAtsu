@@ -1,0 +1,183 @@
+{% extends "myq/demo/base_demo.html" %}
+{% load static %}
+{% load static_tags %}
+
+{% block title %}質感パラメータ＆360度物体回転連番出力{% endblock %}
+
+{% block extra_css %}
+<script type="importmap">
+{
+  "imports": {
+    "three": "{% static 'vendor/three@0.184.0/build/three.module.js' %}",
+    "three/addons/": "{% static 'vendor/three@0.184.0/examples/jsm/' %}"
+  }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="margin: 0; font-size: 1.5rem;">質感パラメータ＆360度回転連番画像出力</h1>
+    <p style="margin: 0.25rem 0 0 0; color: var(--demo-text-muted); font-size: 0.9rem;">
+      オブジェクト: <strong>{{ object.original_photo.title|default:"切り抜きオブジェクト" }}</strong> (@{{ object.owner.username }})
+    </p>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    {% if object.original_photo %}
+    <a href="{% url 'demo_comparison' uuid=object.original_photo.uuid %}" class="demo-btn demo-btn-secondary demo-btn-sm">比較ビュー</a>
+    {% endif %}
+    <a href="{% url 'demo_index' %}" class="demo-btn demo-btn-secondary demo-btn-sm">素材一覧へ</a>
+  </div>
+</div>
+
+<div class="demo-segment-workspace" style="grid-template-columns: 1fr 360px;">
+  <!-- Three.js 3D Viewport -->
+  <div class="demo-card" style="padding: 1rem; position: relative;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+      <div style="font-weight: 700; font-size: 0.95rem; color: var(--demo-accent);">
+        3D PBR リアルタイムプレビュー (ドラッグで回転・ズーム)
+      </div>
+      <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; cursor: pointer;">
+        <input type="checkbox" id="cb-auto-rotate" checked>
+        自動回転
+      </label>
+    </div>
+
+    <div class="demo-canvas-wrap">
+      <div id="three-viewport"></div>
+
+      <!-- キャプチャ中オーバーレイ -->
+      <div id="capture-overlay" class="demo-loading-overlay">
+        <div class="demo-spinner"></div>
+        <div id="capture-progress-text" style="font-weight: 700; color: #fff;">キャプチャ中... (0 / 36)</div>
+      </div>
+    </div>
+
+    <!-- キャプチャ実行コントロール -->
+    <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 1rem; flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 0.4rem;">
+        <label for="select-frame-count" style="font-size: 0.85rem; color: var(--demo-text-muted);">フレーム数:</label>
+        <select id="select-frame-count" class="demo-select" style="padding: 0.35rem 0.6rem;">
+          <option value="12">12 frames (30°刻み)</option>
+          <option value="24">24 frames (15°刻み)</option>
+          <option value="36" selected>36 frames (10°刻み・推奨)</option>
+          <option value="60">60 frames (6°刻み・高精度)</option>
+        </select>
+      </div>
+
+      <button id="btn-capture-rotation" class="demo-btn demo-btn-accent" style="margin-left: auto;">
+        360度回転連番画像をキャプチャ
+      </button>
+    </div>
+  </div>
+
+  <!-- PBRパラメータ調整コントロール -->
+  <div style="display: flex; flex-direction: column; gap: 1rem;">
+    <div class="demo-card">
+      <div class="demo-card-header">
+        <h3 class="demo-card-title" style="font-size: 0.95rem;">
+          物理ベース質感パラメータ (PBR)
+        </h3>
+      </div>
+
+      <!-- Roughness (表面粗さ) -->
+      <div class="param-group">
+        <div class="param-label">
+          <span>粗さ (Roughness)</span>
+          <span id="val-roughness" style="color: var(--demo-accent);">{{ object.roughness|floatformat:2 }}</span>
+        </div>
+        <input type="range" id="slider-roughness" class="param-slider" min="0" max="1" step="0.01" value="{{ object.roughness }}">
+      </div>
+
+      <!-- Metalness (金属度) -->
+      <div class="param-group">
+        <div class="param-label">
+          <span>金属度 (Metalness)</span>
+          <span id="val-metalness" style="color: var(--demo-accent);">{{ object.metalness|floatformat:2 }}</span>
+        </div>
+        <input type="range" id="slider-metalness" class="param-slider" min="0" max="1" step="0.01" value="{{ object.metalness }}">
+      </div>
+
+      <!-- Albedo (ベースカラー) -->
+      <div class="param-group">
+        <div class="param-label">
+          <span>ベースカラー (Albedo)</span>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input type="color" id="input-albedo" value="{{ object.albedo }}" style="border: none; width: 44px; height: 36px; border-radius: 6px; cursor: pointer; background: transparent;">
+          <span style="font-family: monospace; font-size: 0.9rem; color: var(--demo-text-muted);">{{ object.albedo }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 切り抜きテクスチャ元画像情報 -->
+    <div class="demo-card">
+      <div class="demo-card-header">
+        <h3 class="demo-card-title" style="font-size: 0.95rem;">切り抜きテクスチャ</h3>
+      </div>
+      <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <div style="width: 64px; height: 64px; background: repeating-conic-gradient(#1e293b 0% 25%, #0f172a 0% 50%) 50% / 12px 12px; border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+          {% if object.image %}
+          <img src="{{ object.get_image_url_64 }}" alt="Texture" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+          {% endif %}
+        </div>
+        <div style="font-size: 0.8rem; color: var(--demo-text-muted); flex: 1;">
+          <div>作成日: {{ object.created_at|date:"Y/m/d H:i" }}</div>
+          <div>UUID: <span style="font-family: monospace;">{{ object.uuid|truncatechars:12 }}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- キャプチャ結果 & 連番アニメーションプレビュー -->
+<div id="rotation-preview-card" class="demo-card" style="margin-top: 1.5rem; display: none;">
+  <div class="demo-card-header">
+    <h3 class="demo-card-title">
+      360度回転連番画像プレビュー & 一括エクスポート
+    </h3>
+    <button id="btn-download-frames-zip" class="demo-btn demo-btn-accent demo-btn-sm" disabled>
+      連番画像ZIPを一括ダウンロード
+    </button>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 240px 1fr; gap: 1.5rem; align-items: center;">
+    <!-- ループアニメーションプレビュー -->
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+      <div style="width: 200px; height: 200px; background: repeating-conic-gradient(#1e293b 0% 25%, #0f172a 0% 50%) 50% / 16px 16px; border-radius: 8px; overflow: hidden; border: 1px solid var(--demo-border); display: flex; align-items: center; justify-content: center;">
+        <img id="animated-preview-img" src="" alt="Animated Preview" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+      </div>
+      <div style="width: 100%;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--demo-text-muted); margin-bottom: 0.2rem;">
+          <span>再生速度:</span>
+          <span id="val-fps">24 FPS</span>
+        </div>
+        <input type="range" id="slider-fps" class="param-slider" min="5" max="60" value="24">
+      </div>
+    </div>
+
+    <!-- 連番フィルムストリップ -->
+    <div>
+      <div style="font-size: 0.85rem; font-weight: 600; color: var(--demo-text-muted); margin-bottom: 0.25rem;">
+        生成された連番フレーム一覧 (スライド・プレゼン用PNG):
+      </div>
+      <div id="frame-filmstrip" class="frame-preview-strip"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.ROTATION_CONFIG = {
+    photoUUID: "{{ object.uuid }}",
+    modelURL: "{% static 'models/model.glb' %}",
+    hdriURL: "{% static 'hdri/lilienstein_1k.hdr' %}",
+    textureURL: "{% if object.image %}{{ object.get_image_url }}{% endif %}",
+    roughness: "{{ object.roughness }}",
+    metalness: "{{ object.metalness }}",
+    albedo: "{{ object.albedo }}",
+    apiExportZipURL: "{% url 'demo_export_rotation' %}"
+  };
+</script>
+<script type="module" src="{% static_ts 'js/demo_rotation.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% load static %}
+{% load static_tags %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}研究発表素材デモシステム{% endblock %} | 質感あつめ</title>
+  <link rel="icon" href="{% static_ts 'image/favicon.ico' %}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static_ts 'css/demo.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="demo-body">
+  <header class="demo-header">
+    <a href="{% url 'demo_index' %}" class="demo-brand">
+      <span class="demo-badge">RESEARCH DEMO</span>
+      <span class="demo-title">研究発表用 素材出力システム</span>
+    </a>
+    <nav class="demo-nav">
+      <a href="{% url 'demo_index' %}" class="{% if request.resolver_match.url_name == 'demo_index' %}active{% endif %}">素材一覧・トップ</a>
+      <a href="{% url 'photo_gallery' %}">通常ギャラリー</a>
+      <a href="/admin/">Django管理</a>
+      <div class="demo-user-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+        <span>{{ request.user.username }} (管理者)</span>
+      </div>
+    </nav>
+  </header>
+
+  <main class="demo-container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer style="padding: 1.5rem; text-align: center; color: var(--demo-text-muted); font-size: 0.8rem; border-top: 1px solid var(--demo-border);">
+    質感あつめ 研究発表デモスイート (SAM3 Segmentation / PBR Reflectance / Multi-angle Capture)
+  </footer>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

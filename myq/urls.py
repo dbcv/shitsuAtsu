@@ -1,6 +1,7 @@
 # myq/urls.py
 from django.urls import path, re_path
 
+from .views import demo
 from .views.autoLogin import auto_login_view
 from .views.gallery import PhotoGallery2View, PhotoGallery3View, PhotoGalleryView
 from .views.homemenu import Home3View, Start3View
@@ -49,4 +50,12 @@ urlpatterns = [
     path(
         "api/register_reflectance/", register_reflectance, name="register_reflectance"
     ),
+    # Demo System for Research Presentation
+    path("demo/", demo.DemoIndexView.as_view(), name="demo_index"),
+    path("demo/segment/<uuid:uuid>/", demo.DemoSegmentView.as_view(), name="demo_segment"),
+    path("demo/comparison/<uuid:uuid>/", demo.DemoComparisonView.as_view(), name="demo_comparison"),
+    path("demo/rotation/<uuid:uuid>/", demo.DemoRotationView.as_view(), name="demo_rotation"),
+    path("demo/api/segment/", demo.demo_segment_api, name="demo_api_segment"),
+    path("demo/api/export_comparison/<uuid:uuid>/", demo.demo_export_comparison_zip, name="demo_export_comparison"),
+    path("demo/api/export_rotation/", demo.demo_export_rotation_zip, name="demo_export_rotation"),
 ]

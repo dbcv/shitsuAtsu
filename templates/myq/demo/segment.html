@@ -1,0 +1,135 @@
+{% extends "myq/demo/base_demo.html" %}
+{% load static %}
+{% load static_tags %}
+
+{% block title %}SAM3 セグメンテーション＆マスク出力素材{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+  <div>
+    <h1 style="margin: 0; font-size: 1.5rem;">SAM3 セグメンテーション＆マスク出力</h1>
+    <p style="margin: 0.25rem 0 0 0; color: var(--demo-text-muted); font-size: 0.9rem;">
+      対象画像: <strong>{{ object.title }}</strong> (@{{ object.owner.username }})
+    </p>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    <a href="{% url 'demo_comparison' uuid=object.uuid %}" class="demo-btn demo-btn-secondary demo-btn-sm">比較ビューへ</a>
+    <a href="{% url 'demo_index' %}" class="demo-btn demo-btn-secondary demo-btn-sm">一覧に戻る</a>
+  </div>
+</div>
+
+<div class="demo-segment-workspace">
+  <!-- Interactive Workspace Canvas -->
+  <div class="demo-card" style="padding: 1rem; position: relative;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+      <div style="font-weight: 700; font-size: 0.95rem; color: var(--demo-accent);">
+        クリックしてマーカーを配置
+      </div>
+      <div id="points-count" style="font-size: 0.8rem; color: var(--demo-text-muted);">
+        ポジティブ: 0 点 / ネガティブ: 0 点
+      </div>
+    </div>
+
+    <div class="canvas-interactive-wrapper">
+      <canvas id="demo-canvas"></canvas>
+      <canvas id="overlay-canvas" style="position: absolute; top: 0; left: 0;"></canvas>
+
+      <div id="loading-overlay" class="demo-loading-overlay">
+        <div class="demo-spinner"></div>
+        <div style="font-weight: 700; color: #fff;">SAM3 推論・マスク生成中...</div>
+      </div>
+    </div>
+
+    <!-- Toolbar controls -->
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; align-items: center;">
+      <button id="btn-pos-mode" class="demo-btn demo-btn-success demo-btn-sm">
+        ＋ 範囲内 (Positive)
+      </button>
+      <button id="btn-neg-mode" class="demo-btn demo-btn-secondary demo-btn-sm">
+        − 範囲外 (Negative)
+      </button>
+      <button id="btn-clear-points" class="demo-btn demo-btn-secondary demo-btn-sm">
+        マーカー全消去
+      </button>
+      <button id="btn-run-sam" class="demo-btn demo-btn-accent demo-btn-sm" style="margin-left: auto;">
+        マーカーでSAM3実行
+      </button>
+    </div>
+
+    <!-- Text Prompt alternative -->
+    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--demo-border); display: flex; gap: 0.5rem;">
+      <input type="text" id="text-prompt-input" class="demo-input" placeholder="テキストプロンプト（例: red cup, metallic watch）" value="{{ object.description }}" style="flex: 1;">
+      <button id="btn-run-text-sam" class="demo-btn demo-btn-primary demo-btn-sm">
+        テキストで実行
+      </button>
+    </div>
+  </div>
+
+  <!-- Output Assets Panel -->
+  <div style="display: flex; flex-direction: column; gap: 1rem;">
+    <!-- 2値白黒マスク -->
+    <div class="demo-card">
+      <div class="demo-card-header">
+        <h3 class="demo-card-title" style="font-size: 0.95rem;">
+          2値白黒マスク (Lモード PNG)
+        </h3>
+        <button id="btn-download-mask" class="demo-btn demo-btn-secondary demo-btn-sm" disabled>保存</button>
+      </div>
+      <div class="comparison-img-wrapper" style="aspect-ratio: 4/3;">
+        <img id="result-mask-img" src="" alt="Mask Preview" style="background: #000;">
+      </div>
+    </div>
+
+    <!-- 透過切り抜き画像 -->
+    <div class="demo-card">
+      <div class="demo-card-header">
+        <h3 class="demo-card-title" style="font-size: 0.95rem;">
+          透過切り抜き (RGBA PNG)
+        </h3>
+        <button id="btn-download-cutout" class="demo-btn demo-btn-secondary demo-btn-sm" disabled>保存</button>
+      </div>
+      <div class="comparison-img-wrapper" style="aspect-ratio: 4/3;">
+        <img id="result-cutout-img" src="" alt="Cutout Preview">
+      </div>
+    </div>
+
+    <!-- バウンディングボックス クロップ -->
+    <div class="demo-card">
+      <div class="demo-card-header">
+        <h3 class="demo-card-title" style="font-size: 0.95rem;">
+          抽出対象クロップ (最小矩形)
+        </h3>
+        <button id="btn-download-bbox" class="demo-btn demo-btn-secondary demo-btn-sm" disabled>保存</button>
+      </div>
+      <div class="comparison-img-wrapper" style="aspect-ratio: 4/3;">
+        <img id="result-bbox-img" src="" alt="Bounding Box Crop Preview">
+      </div>
+    </div>
+
+    <!-- マスク統計情報 & 一括ZIP -->
+    <div class="demo-card">
+      <div class="demo-card-header">
+        <h3 class="demo-card-title" style="font-size: 0.95rem;">マスク統計 & 一括出力</h3>
+      </div>
+      <div style="font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem; color: var(--demo-text-muted); margin-bottom: 1rem;">
+        <div>解像度: <strong id="stat-resolution" style="color: var(--demo-text);">-</strong></div>
+        <div>抽出画素: <strong id="stat-pixels" style="color: var(--demo-text);">-</strong></div>
+        <div>抽出面積比: <strong id="stat-percentage" style="color: var(--demo-accent);">-</strong></div>
+      </div>
+      <button id="btn-download-zip" class="demo-btn demo-btn-accent" style="width: 100%;" disabled>
+        素材一括ZIPダウンロード
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.DEMO_CONFIG = {
+    photoUUID: "{{ object.uuid }}",
+    imageURL: "{{ object.get_image_url }}",
+    apiSegmentURL: "{% url 'demo_api_segment' %}",
+    apiExportZipURL: "{% url 'demo_export_rotation' %}"
+  };
+</script>
+<script src="{% static_ts 'js/demo_segment.js' %}"></script>
+{% endblock %}

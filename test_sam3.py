@@ -101,8 +101,8 @@ def run_sam3_segmentation(
         input_labels_list.append(0)
 
     # SAM3 Tracker が要求する形状: (batch_size, num_frames, num_points, 2)
-    input_points_np = np.array([[input_points_list]])
-    input_labels_np = np.array([[input_labels_list]])
+    input_points = [[input_points_list]]
+    input_labels = [[input_labels_list]]
 
     print(f"[*] 範囲内マーカー (Positive, label=1): {positive_points}")
     print(f"[*] 範囲外マーカー (Negative, label=0): {negative_points}")
@@ -110,8 +110,8 @@ def run_sam3_segmentation(
     # 前処理
     inputs = processor(
         image,
-        input_points=input_points_np,
-        input_labels=input_labels_np,
+        input_points=input_points,
+        input_labels=input_labels,
         return_tensors="pt",
     ).to(device)
 

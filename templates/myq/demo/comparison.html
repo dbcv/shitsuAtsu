@@ -1,0 +1,140 @@
+{% extends "myq/demo/base_demo.html" %}
+{% load static %}
+{% load static_tags %}
+
+{% block title %}比較＆一括エクスポートデモ{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="margin: 0; font-size: 1.5rem;">元画像・セグメント・質感レンダリング比較</h1>
+    <p style="margin: 0.25rem 0 0 0; color: var(--demo-text-muted); font-size: 0.9rem;">
+      タイトル: <strong>{{ object.title }}</strong> | 所有者: @{{ object.owner.username }}
+    </p>
+  </div>
+  <div style="display: flex; gap: 0.5rem;">
+    <a href="{% url 'demo_export_comparison' uuid=object.uuid %}" class="demo-btn demo-btn-accent">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+      発表用素材一括ZIPダウンロード
+    </a>
+    <a href="{% url 'demo_segment' uuid=object.uuid %}" class="demo-btn demo-btn-secondary">SAM3切抜調整</a>
+    <a href="{% url 'demo_index' %}" class="demo-btn demo-btn-secondary">一覧へ</a>
+  </div>
+</div>
+
+{% with latest_seg=segmented_list.first %}
+<div class="comparison-grid">
+  <!-- 1. 元画像 -->
+  <div class="comparison-box">
+    <div class="comparison-box-title">
+      <span>1. 元画像 (Original RGB)</span>
+    </div>
+    <div class="comparison-img-wrapper">
+      <img src="{{ object.get_image_url }}" alt="Original Photo" id="img-original">
+    </div>
+    <div style="margin-top: 0.75rem; width: 100%; display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 0.75rem; color: var(--demo-text-muted);">{{ object.original_filename }}</span>
+      <a href="{{ object.get_image_url }}" download="original_{{ object.uuid }}.webp" class="demo-btn demo-btn-secondary demo-btn-sm">画像保存</a>
+    </div>
+  </div>
+
+  <!-- 2. セグメント画像 -->
+  <div class="comparison-box">
+    <div class="comparison-box-title">
+      <span>2. セグメント切り抜き (Alpha Mask)</span>
+    </div>
+    <div class="comparison-img-wrapper">
+      {% if latest_seg and latest_seg.image %}
+      <img src="{{ latest_seg.get_image_url }}" alt="Segmented Photo" id="img-segmented">
+      {% else %}
+      <div style="color: var(--demo-text-muted); font-size: 0.85rem; text-align: center; padding: 1rem;">
+        セグメント画像が未生成です。<br>
+        <a href="{% url 'demo_segment' uuid=object.uuid %}" class="demo-btn demo-btn-accent demo-btn-sm" style="margin-top: 0.5rem;">SAM3で切り抜く</a>
+      </div>
+      {% endif %}
+    </div>
+    <div style="margin-top: 0.75rem; width: 100%; display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 0.75rem; color: var(--demo-text-muted);">
+        {% if latest_seg %}作成: {{ latest_seg.created_at|date:"m/d H:i" }}{% else %}-{% endif %}
+      </span>
+      {% if latest_seg and latest_seg.image %}
+      <a href="{{ latest_seg.get_image_url }}" download="segmented_{{ latest_seg.uuid }}.png" class="demo-btn demo-btn-secondary demo-btn-sm">透過PNG保存</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 3. 質感再現画像 -->
+  <div class="comparison-box">
+    <div class="comparison-box-title">
+      <span>3. 質感再現 (PBR Rendered)</span>
+    </div>
+    <div class="comparison-img-wrapper">
+      {% if latest_seg and latest_seg.has_rendered_image %}
+      <img src="{{ latest_seg.get_rendered_image_url }}" alt="Rendered Photo" id="img-rendered">
+      {% else %}
+      <div style="color: var(--demo-text-muted); font-size: 0.85rem; text-align: center; padding: 1rem;">
+        {% if latest_seg %}
+        レンダリング画像が未生成です。<br>
+        <a href="{% url 'demo_rotation' uuid=latest_seg.uuid %}" class="demo-btn demo-btn-accent demo-btn-sm" style="margin-top: 0.5rem;">3D質感設定へ</a>
+        {% else %}
+        切り抜きが必要です
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    <div style="margin-top: 0.75rem; width: 100%; display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 0.75rem; color: var(--demo-text-muted);">Three.js PBR</span>
+      {% if latest_seg and latest_seg.has_rendered_image %}
+      <a href="{{ latest_seg.get_rendered_image_url }}" download="rendered_{{ latest_seg.uuid }}.webp" class="demo-btn demo-btn-secondary demo-btn-sm">画像保存</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- パラメータおよびメタデータ情報カード -->
+<div class="demo-card">
+  <div class="demo-card-header">
+    <h3 class="demo-card-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--demo-accent)"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      質感パラメータ・メタデータ
+    </h3>
+    {% if latest_seg %}
+    <a href="{% url 'demo_rotation' uuid=latest_seg.uuid %}" class="demo-btn demo-btn-primary demo-btn-sm">
+      3D回転連番アニメーション生成画面へ →
+    </a>
+    {% endif %}
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+    <div style="background: var(--demo-surface-elevated); padding: 0.75rem 1rem; border-radius: var(--demo-radius-sm);">
+      <div style="font-size: 0.75rem; color: var(--demo-text-muted);">Roughness (表面粗さ)</div>
+      <div style="font-size: 1.25rem; font-weight: 700; color: #fff;">
+        {% if latest_seg %}{{ latest_seg.roughness|floatformat:3 }}{% else %}{{ object.roughness|floatformat:3 }}{% endif %}
+      </div>
+    </div>
+
+    <div style="background: var(--demo-surface-elevated); padding: 0.75rem 1rem; border-radius: var(--demo-radius-sm);">
+      <div style="font-size: 0.75rem; color: var(--demo-text-muted);">Metalness (金属度)</div>
+      <div style="font-size: 1.25rem; font-weight: 700; color: #fff;">
+        {% if latest_seg %}{{ latest_seg.metalness|floatformat:3 }}{% else %}{{ object.metalness|floatformat:3 }}{% endif %}
+      </div>
+    </div>
+
+    <div style="background: var(--demo-surface-elevated); padding: 0.75rem 1rem; border-radius: var(--demo-radius-sm);">
+      <div style="font-size: 0.75rem; color: var(--demo-text-muted);">Albedo (ベースカラー)</div>
+      <div style="font-size: 1.25rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+        <span style="display: inline-block; width: 18px; height: 18px; border-radius: 4px; border: 1px solid #fff; background: {% if latest_seg %}{{ latest_seg.albedo }}{% else %}{{ object.albedo }}{% endif %};"></span>
+        {% if latest_seg %}{{ latest_seg.albedo }}{% else %}{{ object.albedo }}{% endif %}
+      </div>
+    </div>
+
+    <div style="background: var(--demo-surface-elevated); padding: 0.75rem 1rem; border-radius: var(--demo-radius-sm);">
+      <div style="font-size: 0.75rem; color: var(--demo-text-muted);">推定テキスト説明</div>
+      <div style="font-size: 0.95rem; font-weight: 500; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ object.description }}">
+        {{ object.description|default:"説明なし" }}
+      </div>
+    </div>
+  </div>
+</div>
+{% endwith %}
+{% endblock %}
